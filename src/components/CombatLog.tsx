@@ -9,16 +9,17 @@ interface Props {
 }
 
 export default function CombatLog({ entries, heroName }: Props) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = containerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [entries.length]);
 
   if (entries.length === 0) return null;
 
   return (
-    <div className="flex-1 overflow-y-auto space-y-1 pr-1 combat-log">
+    <div ref={containerRef} className="overflow-y-auto space-y-1 pr-1 h-80">
       {entries.map((entry, i) => {
         const isHero = entry.attacker === heroName;
         const isHealing = entry.healing !== undefined;
@@ -85,7 +86,6 @@ export default function CombatLog({ entries, heroName }: Props) {
           </div>
         );
       })}
-      <div ref={bottomRef} />
     </div>
   );
 }

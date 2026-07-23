@@ -29,15 +29,8 @@ export default function CharacterCard({ character, selected, onClick }: Props) {
           <img
             src={character.imageUrl}
             alt={character.name}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
             onError={() => setImgError(true)}
-            style={
-              character.imagePosition
-                ? {
-                    objectPosition: `${character.imagePosition.offsetX}px ${character.imagePosition.offsetY}px`,
-                  }
-                : undefined
-            }
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-700">
