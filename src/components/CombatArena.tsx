@@ -448,14 +448,13 @@ export default function CombatArena({ hero, monster, onReset }: Props) {
 
   // Reset when combatants change
   useEffect(() => {
-    if (state === "idle") {
-      setDisplayedEntries([]);
-      setAllEntries([]);
-      setHeroHp(hero?.hitPoints ?? 0);
-      setMonsterHp(monster?.hitPoints ?? 0);
-      setChronicleOpen(false);
-    }
-  }, [hero, monster, state]);
+    setState("idle");
+    setDisplayedEntries([]);
+    setAllEntries([]);
+    setHeroHp(hero?.hitPoints ?? 0);
+    setMonsterHp(monster?.hitPoints ?? 0);
+    setChronicleOpen(false);
+  }, [hero, monster]);
 
   // Drip-feed entries at 150ms
   useEffect(() => {
