@@ -28,15 +28,15 @@ export default function CombatLog({ entries, heroName }: Props) {
           <div
             key={i}
             className={`text-xs rounded px-2 py-1 flex gap-2 items-start ${
-              isHero ? "bg-blue-950/60" : "bg-red-950/60"
+              isHero ? "bg-slate-800/70" : "bg-stone-800/70"
             }`}
           >
             {/* Badge */}
             <span
-              className={`shrink-0 px-1.5 py-0.5 rounded-full font-bold text-xs ${
+              className={`shrink-0 px-1.5 py-0.5 rounded font-bold text-xs tracking-wide ${
                 isHero
-                  ? "bg-blue-600 text-white"
-                  : "bg-red-700 text-white"
+                  ? "bg-slate-600 text-slate-200"
+                  : "bg-stone-600 text-stone-200"
               }`}
             >
               {isHero ? "HERO" : "MON"}
@@ -72,13 +72,13 @@ export default function CombatLog({ entries, heroName }: Props) {
                   vs AC {entry.ac} —{" "}
                   {entry.hit ? (
                     <>
-                      <span className="text-green-400 font-bold">HIT!</span>{" "}
-                      <span className="text-red-400 font-bold">
+                      <span className="text-yellow-400 font-bold">HIT!</span>{" "}
+                      <span className="text-orange-300 font-bold">
                         {entry.damage} dmg
                       </span>
                     </>
                   ) : (
-                    <span className="text-gray-500 font-bold">MISS</span>
+                    <span className="text-slate-500 font-bold">MISS</span>
                   )}
                 </>
               )}
