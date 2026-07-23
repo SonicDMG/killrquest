@@ -756,7 +756,7 @@ export default function CombatArena({ heroes, monsters, onReset }: Props) {
               )
             ) : (
               <div className="flex h-full" style={{ minHeight: 0 }}>
-                <div className="shrink-0" style={{ minHeight: 0, width: "200px", minWidth: "200px" }}>
+                <div className="shrink-0" style={{ height: "100%", width: "200px", minWidth: "200px" }}>
                   <ConversationList
                     conversations={conversations}
                     activeId={activeConversationId}
@@ -765,7 +765,7 @@ export default function CombatArena({ heroes, monsters, onReset }: Props) {
                     onDelete={handleDeleteConversation}
                   />
                 </div>
-                <div className="flex-1" style={{ minHeight: 0 }}>
+                <div className="flex-1" style={{ height: "100%", minHeight: 0 }}>
                   <ChatPanel
                       activeConversationId={activeConversationId}
                       onConversationCreated={handleConversationCreated}

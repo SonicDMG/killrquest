@@ -65,9 +65,8 @@ export async function deleteConversation(id: string) {
 
 export async function listConversations(): Promise<ConversationDoc[]> {
   await ensureConversationsCollection();
-  return conversationsCollection
-    .find({})
-    .sort({ createdAt: -1 })
-    .limit(100)
-    .toArray();
+  const docs = await conversationsCollection.find({}).limit(100).toArray();
+  return docs.sort((a, b) =>
+    (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+  );
 }
