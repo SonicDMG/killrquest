@@ -478,10 +478,35 @@ export default function CombatArena({ hero, monster, onReset }: Props) {
         setState("done");
         // Auto-open the chronicle after a brief beat
         setTimeout(() => setChronicleOpen(true), 400);
+
+        // Save battle record (fire-and-forget)
+        if (hero && monster) {
+          const finalHp = allEntries[allEntries.length - 1]?.resultHp ?? { hero: 0, monster: 0 };
+          const winner = finalHp.hero > 0 ? hero.name : monster.name;
+          const abilitiesUsed = Array.from(
+            new Set(allEntries.map((e) => e.abilityUsed).filter(Boolean) as string[])
+          );
+          fetch("/api/battles", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              hero: hero.name,
+              heroClass: hero.class ?? null,
+              monster: monster.name,
+              winner,
+              turns: Math.ceil(allEntries.length / 2),
+              heroFinalHp: finalHp.hero,
+              heroMaxHp: hero.maxHitPoints,
+              monsterFinalHp: finalHp.monster,
+              monsterMaxHp: monster.maxHitPoints,
+              abilitiesUsed,
+            }),
+          }).catch(() => {/* non-critical */});
+        }
       }
     }, 150);
     return () => clearInterval(timer);
-  }, [allEntries, state]);
+  }, [allEntries, state, hero, monster]);
 
   const handleFight = async () => {
     if (!hero || !monster) return;

@@ -1,5 +1,5 @@
 import { DataAPIClient } from "@datastax/astra-db-ts";
-import type { Hero, Monster } from "./types";
+import type { Hero, Monster, BattleRecord, ConversationDoc } from "./types";
 
 const client = new DataAPIClient(process.env.ASTRA_DB_TOKEN!);
 const db = client.db(process.env.ASTRA_DB_ENDPOINT!, {
@@ -8,3 +8,5 @@ const db = client.db(process.env.ASTRA_DB_ENDPOINT!, {
 
 export const heroesCollection = db.collection<Hero>("heroes_v2");
 export const monstersCollection = db.collection<Monster>("monsters_v2");
+export const battlesCollection = db.collection<BattleRecord>("battles_v1");
+export const conversationsCollection = db.collection<ConversationDoc>("conversations_v1");

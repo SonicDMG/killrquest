@@ -1,21 +1,31 @@
-import { heroesCollection, monstersCollection } from "./astra";
-import { runCombat } from "./combat";
+import { heroesCollection, monstersCollection, battlesCollection } from "./astra";
 import type { Hero, Monster } from "./types";
 
 // ---------------------------------------------------------------------------
 // System prompt
 // ---------------------------------------------------------------------------
 
-export const SYSTEM_PROMPT = `You are the KillrQuest Game Master — an expert on every hero and monster in the roster.
+export const SYSTEM_PROMPT = `You are the KillrQuest Game Master — a dramatic, authoritative narrator for a fantasy battle roster.
 
-You have three tools at your disposal:
-- search_heroes: find heroes by semantic query (class, abilities, lore)
-- search_monsters: find monsters by semantic query
-- simulate_battle: pit a named hero against a named monster and get the outcome
+You have three tools:
+- search_heroes: find heroes by name, class, or abilities
+- search_monsters: find monsters by name or traits
+- search_battles: find past battles by hero name, monster name, or outcome
 
-When a user asks about a hero or monster, always call the appropriate search tool first so your answer is grounded in real data. When asked who would win a fight, call simulate_battle — never guess.
+When a user asks about a hero, call search_heroes. When they ask about a monster, call search_monsters. When asked who would win a fight, call both search tools and also search_battles for historical context, then reason through the matchup using stats and past outcomes. When asked about battle history or patterns, call search_battles.
 
-Keep responses concise and flavourful. Use game-master tone: dramatic but informative. Refer to characters by name.`;
+Never simulate or guess — always ground your answer in the data the tools return.
+
+## Response formatting
+
+Format every response in clean, readable Markdown:
+
+- Use **bold** for character names, ability names, and key stats on first mention.
+- Use a \`##\` heading to title your response (e.g. \`## Sir Percival vs. The Keyboard Monster\`).
+- Use a \`>\` blockquote for a one-sentence dramatic flavour line at the top or bottom.
+- Use a short bullet list when comparing two or more stats or outcomes — never inline a wall of numbers.
+- Keep prose to 2–4 sentences. Be vivid but concise.
+- Never output raw JSON, stat tables, or turn-by-turn logs.`;
 
 // ---------------------------------------------------------------------------
 // OpenAI tool definitions
@@ -71,22 +81,23 @@ export const TOOLS = [
   {
     type: "function" as const,
     function: {
-      name: "simulate_battle",
+      name: "search_battles",
       description:
-        "Simulate a battle between a named hero and a named monster using the game engine. Returns the winner, turn count, final HP values, and key ability uses.",
+        "Search past battles by semantic query. Returns matching battle records with hero, monster, winner, turns, and HP outcomes.",
       parameters: {
         type: "object",
         properties: {
-          hero_name: {
+          query: {
             type: "string",
-            description: "Exact or partial name of the hero",
+            description:
+              'Natural-language query, e.g. "battles involving Sir Percival" or "heroes that beat the Keyboard Monster"',
           },
-          monster_name: {
-            type: "string",
-            description: "Exact or partial name of the monster",
+          limit: {
+            type: "number",
+            description: "Max results to return (default 5, max 20)",
           },
         },
-        required: ["hero_name", "monster_name"],
+        required: ["query"],
       },
     },
   },
@@ -127,37 +138,23 @@ async function searchMonsters(query: string, limit = 3) {
   return docs.map(trimCharacter);
 }
 
-async function simulateBattle(heroName: string, monsterName: string) {
-  const lowerHero = heroName.toLowerCase();
-  const lowerMonster = monsterName.toLowerCase();
-
-  const [allHeroes, allMonsters] = await Promise.all([
-    heroesCollection.find({}, { limit: 200 }).toArray(),
-    monstersCollection.find({}, { limit: 200 }).toArray(),
-  ]);
-
-  const heroDoc = allHeroes.find((h) => h.name.toLowerCase().includes(lowerHero)) ?? null;
-  const monsterDoc = allMonsters.find((m) => m.name.toLowerCase().includes(lowerMonster)) ?? null;
-
-  if (!heroDoc) return { error: `Hero not found: "${heroName}"` };
-  if (!monsterDoc) return { error: `Monster not found: "${monsterName}"` };
-
-  const log = runCombat(heroDoc, monsterDoc);
-  const last = log[log.length - 1];
-  const heroFinalHp = last?.resultHp.hero ?? 0;
-  const monsterFinalHp = last?.resultHp.monster ?? 0;
-  const winner = heroFinalHp > 0 ? heroDoc.name : monsterDoc.name;
-  const abilitiesUsed = Array.from(new Set(log.map((e) => e.abilityUsed).filter(Boolean)));
-
-  return {
-    hero: heroDoc.name,
-    monster: monsterDoc.name,
-    winner,
-    turns: Math.ceil(log.length / 2),
-    heroFinalHp,
-    monsterFinalHp,
-    abilitiesUsed,
-  };
+async function searchBattles(query: string, limit = 5) {
+  const docs = await battlesCollection
+    .find({}, { sort: { $vectorize: query }, limit: Math.min(limit, 20), includeSimilarity: true })
+    .toArray();
+  return docs.map((d) => ({
+    foughtAt: d.foughtAt,
+    hero: d.hero,
+    heroClass: d.heroClass,
+    monster: d.monster,
+    winner: d.winner,
+    turns: d.turns,
+    heroFinalHp: d.heroFinalHp,
+    heroMaxHp: d.heroMaxHp,
+    monsterFinalHp: d.monsterFinalHp,
+    monsterMaxHp: d.monsterMaxHp,
+    abilitiesUsed: d.abilitiesUsed,
+  }));
 }
 
 export async function executeTool(
@@ -170,8 +167,8 @@ export async function executeTool(
   if (name === "search_monsters") {
     return searchMonsters(args.query as string, args.limit as number | undefined);
   }
-  if (name === "simulate_battle") {
-    return simulateBattle(args.hero_name as string, args.monster_name as string);
+  if (name === "search_battles") {
+    return searchBattles(args.query as string, args.limit as number | undefined);
   }
   return { error: `Unknown tool: ${name}` };
 }

@@ -57,3 +57,46 @@ export interface CombatLogEntry {
   abilityUsed?: string;
   resultHp: { hero: number; monster: number };
 }
+
+export interface BattleRecord {
+  _id?: string;
+  foughtAt: string;
+  hero: string;
+  heroClass: string | null;
+  monster: string;
+  winner: string;
+  turns: number;
+  heroFinalHp: number;
+  heroMaxHp: number;
+  monsterFinalHp: number;
+  monsterMaxHp: number;
+  abilitiesUsed: string[];
+  $vectorize: string;
+}
+
+export type ChatMessageRole = "system" | "user" | "assistant" | "tool";
+
+export interface ChatMessage {
+  role: ChatMessageRole;
+  content: string | null;
+  tool_calls?: {
+    id: string;
+    type: "function";
+    function: { name: string; arguments: string };
+  }[];
+  tool_call_id?: string;
+}
+
+export type Provider = "ollama" | "openai" | "openrouter";
+
+export interface ConversationDoc {
+  _id: string;
+  createdAt: string;
+  label: string;
+  provider: Provider;
+  model: string;
+  // Stateless providers store full message history
+  messages?: ChatMessage[];
+  // OpenAI Responses API — stores last response ID only
+  previousResponseId?: string;
+}

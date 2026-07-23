@@ -90,11 +90,18 @@ export default function ChatPanel() {
           if (!trimmed.startsWith("data:")) continue;
           const payload = trimmed.slice(5).trim();
           if (payload === "[DONE]") break;
-          accumulated += payload;
-          setMessages((prev) => [
-            ...prev.slice(0, -1),
-            { role: "assistant", content: accumulated },
-          ]);
+          try {
+            const { token } = JSON.parse(payload) as { token: string };
+            if (token) {
+              accumulated += token;
+              setMessages((prev) => [
+                ...prev.slice(0, -1),
+                { role: "assistant", content: accumulated },
+              ]);
+            }
+          } catch {
+            // malformed chunk — skip
+          }
         }
       }
     } catch {

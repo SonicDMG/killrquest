@@ -34,23 +34,34 @@ export async function POST(req: NextRequest) {
     ...body.messages,
   ];
 
+  console.log("[agent] ── NEW REQUEST ──────────────────────────────");
+  console.log("[agent] model:", model);
+  console.log("[agent] messages sent to model:", JSON.stringify(messages, null, 2));
+
   // -------------------------------------------------------------------------
   // Agentic loop — non-streaming tool rounds
   // -------------------------------------------------------------------------
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    console.log(`[agent] tool round ${round + 1}/${MAX_TOOL_ROUNDS}`);
+
+    const reqBody = {
+      model,
+      messages,
+      tools: TOOLS,
+      tool_choice: "auto",
+      stream: false,
+    };
+    console.log("[agent] → fetch /v1/chat/completions (non-stream):", JSON.stringify(reqBody, null, 2));
+
     const res = await fetch(`${OLLAMA_BASE}/v1/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model,
-        messages,
-        tools: TOOLS,
-        stream: false,
-      }),
+      body: JSON.stringify(reqBody),
     });
 
     if (!res.ok) {
       const text = await res.text();
+      console.error("[agent] Ollama error:", res.status, text);
       return NextResponse.json(
         { error: `Ollama error ${res.status}: ${text}` },
         { status: 502 }
@@ -61,6 +72,8 @@ export async function POST(req: NextRequest) {
       choices: { message: ChatMessage; finish_reason: string }[];
     };
 
+    console.log("[agent] ← raw response:", JSON.stringify(data, null, 2));
+
     const choice = data.choices?.[0];
     if (!choice) {
       return NextResponse.json({ error: "Empty response from model" }, { status: 502 });
@@ -70,8 +83,11 @@ export async function POST(req: NextRequest) {
 
     // No tool calls → break out and stream the final answer
     if (!assistantMsg.tool_calls || assistantMsg.tool_calls.length === 0) {
+      console.log("[agent] no tool calls, proceeding to final stream");
       break;
     }
+
+    console.log("[agent] tool calls:", JSON.stringify(assistantMsg.tool_calls, null, 2));
 
     // Append assistant message with tool_calls
     messages.push(assistantMsg);
@@ -84,7 +100,9 @@ export async function POST(req: NextRequest) {
       } catch {
         // leave args empty
       }
+      console.log(`[agent] executing tool "${tc.function.name}" args:`, args);
       const result = await executeTool(tc.function.name, args);
+      console.log(`[agent] tool "${tc.function.name}" result:`, JSON.stringify(result, null, 2));
       messages.push({
         role: "tool",
         tool_call_id: tc.id,
@@ -94,21 +112,24 @@ export async function POST(req: NextRequest) {
   }
 
   // -------------------------------------------------------------------------
-  // Final streaming turn
+  // Final streaming turn — NO tools passed so model just generates prose
   // -------------------------------------------------------------------------
+  const finalReqBody = {
+    model,
+    messages,
+    stream: true,
+  };
+  console.log("[agent] → final streaming request:", JSON.stringify(finalReqBody, null, 2));
+
   const streamRes = await fetch(`${OLLAMA_BASE}/v1/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      messages,
-      tools: TOOLS,
-      stream: true,
-    }),
+    body: JSON.stringify(finalReqBody),
   });
 
   if (!streamRes.ok || !streamRes.body) {
     const text = await streamRes.text().catch(() => "");
+    console.error("[agent] stream error:", streamRes.status, text);
     return NextResponse.json(
       { error: `Ollama stream error ${streamRes.status}: ${text}` },
       { status: 502 }
@@ -122,6 +143,7 @@ export async function POST(req: NextRequest) {
       const reader = streamRes.body!.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let fullContent = "";
 
       try {
         while (true) {
@@ -136,17 +158,22 @@ export async function POST(req: NextRequest) {
             if (!trimmed.startsWith("data:")) continue;
             const payload = trimmed.slice(5).trim();
             if (payload === "[DONE]") {
+              console.log("[agent] stream complete. full content:\n", fullContent);
               controller.enqueue(encoder.encode("data: [DONE]\n\n"));
               controller.close();
               return;
             }
             try {
               const chunk = JSON.parse(payload) as {
-                choices: { delta: { content?: string } }[];
+                choices: { delta: { content?: string }; finish_reason?: string }[];
               };
               const token = chunk.choices?.[0]?.delta?.content;
               if (token) {
-                controller.enqueue(encoder.encode(`data: ${token}\n\n`));
+                fullContent += token;
+                // Send as a JSON envelope so the client can parse it reliably
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ token })}\n\n`)
+                );
               }
             } catch {
               // malformed chunk — skip
