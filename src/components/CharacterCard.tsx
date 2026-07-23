@@ -17,13 +17,17 @@ export default function CharacterCard({ character, selected, onClick }: Props) {
     ? "ring-4 ring-yellow-400 ring-offset-2 ring-offset-gray-900"
     : "ring-1 ring-white/10";
 
+  const borderColor = selected ? "#b45309" : "#57534e";
+  const bgColor = selected ? "#1c1008" : "#1c1917";
+
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left rounded-xl overflow-hidden bg-gray-800 hover:bg-gray-700 transition-all ${ringClass} focus:outline-none`}
+      className={`w-full text-left rounded-xl overflow-hidden transition-all focus:outline-none ${ringClass}`}
+      style={{ background: bgColor, border: `2px solid ${borderColor}` }}
     >
       {/* Image */}
-      <div className="relative h-36 w-full bg-gray-700 overflow-hidden">
+      <div className="relative h-36 w-full overflow-hidden" style={{ background: "#292524" }}>
         {!imgError && character.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -33,7 +37,7 @@ export default function CharacterCard({ character, selected, onClick }: Props) {
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-700">
+          <div className="w-full h-full flex items-center justify-center" style={{ background: "#292524" }}>
             <span className="text-4xl">⚔️</span>
           </div>
         )}
@@ -44,26 +48,33 @@ export default function CharacterCard({ character, selected, onClick }: Props) {
             style={{ backgroundColor: character.color }}
           />
         )}
+        {/* Selected warm glow */}
+        {selected && (
+          <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: "inset 0 0 20px rgba(180,83,9,0.3)" }} />
+        )}
       </div>
 
       {/* Body */}
       <div className="p-3 space-y-2">
         <div>
-          <h3 className="font-bold text-white text-sm leading-tight">
+          <h3
+            className="font-bold text-sm leading-tight"
+            style={{ color: selected ? "#fde68a" : "#e7e5e4", fontFamily: "serif" }}
+          >
             {character.name}
           </h3>
           {hero.class && (
-            <p className="text-xs text-gray-400">{hero.class}</p>
+            <p className="text-xs" style={{ color: "#a8a29e" }}>{hero.class}</p>
           )}
         </div>
 
         {/* Stats row */}
-        <div className="flex gap-3 text-xs">
+        <div className="flex gap-3 text-xs font-mono" style={{ color: "#a8a29e" }}>
           <span className="text-red-400">
             ❤️ {character.hitPoints}/{character.maxHitPoints}
           </span>
-          <span className="text-blue-400">🛡️ {character.armorClass}</span>
-          <span className="text-green-400">
+          <span style={{ color: "#93c5fd" }}>🛡️ {character.armorClass}</span>
+          <span className="text-amber-400">
             ⚔️ +{character.attackBonus}/{character.damageDie}
           </span>
         </div>
@@ -74,11 +85,12 @@ export default function CharacterCard({ character, selected, onClick }: Props) {
             {character.abilities.slice(0, 4).map((ab) => (
               <span
                 key={ab.name}
-                className={`text-xs px-1.5 py-0.5 rounded-full ${
+                className="text-xs px-1.5 py-0.5 rounded-full"
+                style={
                   ab.type === "healing"
-                    ? "bg-green-900 text-green-300"
-                    : "bg-purple-900 text-purple-300"
-                }`}
+                    ? { background: "#14532d", color: "#86efac" }
+                    : { background: "#4c1d95", color: "#c4b5fd" }
+                }
               >
                 {ab.name}
               </span>
