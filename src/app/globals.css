@@ -328,10 +328,15 @@ body {
   color: #fef3c7;
   margin: 0.75em 0 0.35em;
   line-height: 1.3;
+  letter-spacing: 0.01em;
 }
-.markdown-body h1 { font-size: 1.1em; }
+.markdown-body h1 {
+  font-size: 1.1em;
+  border-bottom: 1px solid #3c3836;
+  padding-bottom: 0.2em;
+}
 .markdown-body h2 { font-size: 1em; }
-.markdown-body h3 { font-size: 0.95em; }
+.markdown-body h3 { font-size: 0.95em; color: #fcd34d; }
 
 .markdown-body strong { color: #fde68a; font-weight: 700; }
 .markdown-body em     { color: #d6d3d1; font-style: italic; }
@@ -343,38 +348,82 @@ body {
 }
 .markdown-body li { margin-bottom: 0.2em; }
 
+/* ── Stat tables ─────────────────────────────────────────── */
 .markdown-body table {
   border-collapse: collapse;
   width: 100%;
-  margin: 0.5em 0;
-  font-size: 0.8em;
+  margin: 0.6em 0;
+  font-size: 0.82em;
+  border: 1px solid #3c3836;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.markdown-body thead tr {
+  background: linear-gradient(90deg, #3c2206, #2c1a06);
 }
 .markdown-body th {
-  background: #292524;
   color: #fde68a;
+  font-family: serif;
   font-weight: 700;
-  padding: 4px 8px;
-  border: 1px solid #3c3836;
+  padding: 5px 10px;
+  border-right: 1px solid #3c3836;
+  border-bottom: 1px solid #57350f;
   text-align: left;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-size: 0.8em;
 }
+.markdown-body th:last-child { border-right: none; }
 .markdown-body td {
-  padding: 3px 8px;
-  border: 1px solid #292524;
+  padding: 4px 10px;
+  border-right: 1px solid #292524;
+  border-bottom: 1px solid #292524;
   color: #d6d3d1;
 }
+.markdown-body td:last-child { border-right: none; }
+.markdown-body tr:last-child td { border-bottom: none; }
 .markdown-body tr:nth-child(even) td { background: #1c1917; }
+.markdown-body tr:nth-child(odd)  td { background: #211d1b; }
 
-.markdown-body code {
-  background: #292524;
-  color: #fde68a;
-  border-radius: 3px;
-  padding: 0.1em 0.35em;
+/* Numbers in table cells glow amber */
+.markdown-body td:has(> :only-child),
+.markdown-body td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Numeric-looking cells: right-align and highlight */
+.markdown-body td:not(:first-child) {
+  text-align: right;
+  color: #fcd34d;
+  font-weight: 600;
   font-family: ui-monospace, monospace;
-  font-size: 0.85em;
+  font-size: 0.9em;
+}
+
+/* First column always left-aligned label */
+.markdown-body td:first-child {
+  text-align: left;
+  color: #e7e5e4;
+  font-weight: 500;
+  font-family: inherit;
+  font-size: 1em;
+}
+
+/* ── Inline code used for stat values like `18 STR` ─────── */
+.markdown-body code {
+  background: #2c1a06;
+  color: #fcd34d;
+  border: 1px solid #57350f;
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+  font-family: ui-monospace, monospace;
+  font-size: 0.88em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .markdown-body pre {
-  background: #292524;
+  background: #1c1917;
   border: 1px solid #3c3836;
   border-radius: 6px;
   padding: 0.6em 0.8em;
@@ -383,14 +432,19 @@ body {
 }
 .markdown-body pre code {
   background: none;
+  border: none;
   padding: 0;
   color: #e7e5e4;
+  font-weight: 400;
 }
 
+/* ── Blockquote — flavour text / lore ───────────────────── */
 .markdown-body blockquote {
   border-left: 3px solid #b45309;
+  background: #1c1917;
+  border-radius: 0 4px 4px 0;
   margin: 0.5em 0;
-  padding: 0.2em 0.75em;
+  padding: 0.35em 0.75em;
   color: #a8a29e;
   font-style: italic;
 }
@@ -399,4 +453,11 @@ body {
   border: none;
   border-top: 1px solid #3c3836;
   margin: 0.75em 0;
+}
+
+/* ── Strikethrough (dead/depleted stats) ────────────────── */
+.markdown-body del {
+  color: #78716c;
+  text-decoration: line-through;
+  opacity: 0.7;
 }

@@ -492,6 +492,11 @@ export default function CombatArena({ heroes, monsters, onReset }: Props) {
 
   useEffect(() => { refreshConversations(); }, [refreshConversations]);
 
+  // Re-fetch conversation list whenever the chat tab is opened
+  useEffect(() => {
+    if (activeTab === "chat") refreshConversations();
+  }, [activeTab, refreshConversations]);
+
   const handleConversationCreated = useCallback((
     id: string,
     meta: { provider: Provider; model: string; label: string }
@@ -762,9 +767,10 @@ export default function CombatArena({ heroes, monsters, onReset }: Props) {
                 </div>
                 <div className="flex-1" style={{ minHeight: 0 }}>
                   <ChatPanel
-                    activeConversationId={activeConversationId}
-                    onConversationCreated={handleConversationCreated}
-                  />
+                      activeConversationId={activeConversationId}
+                      onConversationCreated={handleConversationCreated}
+                      onStreamEnd={refreshConversations}
+                    />
                 </div>
               </div>
             )}

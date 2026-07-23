@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback, KeyboardEvent } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { Provider } from "@/lib/types";
 
 type Role = "user" | "assistant";
@@ -18,14 +19,32 @@ interface ProviderInfo {
 interface Props {
   activeConversationId: string | null;
   onConversationCreated: (id: string, meta: { provider: Provider; model: string; label: string }) => void;
+  onStreamEnd?: () => void;
 }
 
 const OLLAMA_DEFAULT = process.env.NEXT_PUBLIC_OLLAMA_MODEL ?? "glm-5.2:cloud";
 
-export default function ChatPanel({ activeConversationId, onConversationCreated }: Props) {
+const QUIPS = [
+  "🎲 Rolling the dice of fate…",
+  "📜 Consulting the ancient tomes…",
+  "🧙 The wizard is thinking…",
+  "⚔️ Sharpening the lore…",
+  "🔮 Gazing into the crystal ball…",
+  "🗺️ Mapping the dungeon…",
+  "🐉 Negotiating with the dragon…",
+  "🕯️ Deciphering the runes…",
+  "🌑 The shadows whisper back…",
+  "🏰 Consulting the castle records…",
+  "💀 The bones have been cast…",
+  "🧝 Asking the elves for help…",
+];
+
+export default function ChatPanel({ activeConversationId, onConversationCreated, onStreamEnd }: Props) {
   const [displayMessages, setDisplayMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [quipIndex, setQuipIndex] = useState(0);
+  const [quipVisible, setQuipVisible] = useState(false);
 
   // Provider / model state
   const [providers, setProviders] = useState<ProviderInfo[]>([{ id: "ollama", label: "Ollama" }]);
@@ -63,6 +82,9 @@ export default function ChatPanel({ activeConversationId, onConversationCreated 
   }, [provider]);
 
   // ── Load messages when active conversation changes ─────────────────────────
+  // Only fires when the user explicitly switches to a different conversation.
+  // Streaming updates displayMessages in-place; we never re-fetch after a
+  // stream ends to avoid clobbering in-flight or just-finished responses.
   useEffect(() => {
     if (activeConversationId === null) {
       setDisplayMessages([]);
@@ -70,7 +92,9 @@ export default function ChatPanel({ activeConversationId, onConversationCreated 
       return;
     }
 
-    // Track this load so a stale response from a previous id doesn't clobber state
+    // Same conversation as what's already loaded — don't re-fetch.
+    if (activeIdRef.current === activeConversationId) return;
+
     let cancelled = false;
     activeIdRef.current = activeConversationId;
 
@@ -87,6 +111,36 @@ export default function ChatPanel({ activeConversationId, onConversationCreated 
 
     return () => { cancelled = true; };
   }, [activeConversationId]);
+
+  // ── Quip cycling while streaming ──────────────────────────────────────────
+  // Each cycle: pop up → hold 2.2s → slide down → pause 0.8s → next
+  useEffect(() => {
+    if (!streaming) {
+      setQuipVisible(false);
+      return;
+    }
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    let idx = Math.floor(Math.random() * QUIPS.length);
+
+    const show = () => {
+      if (cancelled) return;
+      setQuipIndex(idx);
+      setQuipVisible(true);
+      timer = setTimeout(hide, 2200);
+    };
+
+    const hide = () => {
+      if (cancelled) return;
+      setQuipVisible(false);
+      idx = (idx + 1) % QUIPS.length;
+      timer = setTimeout(show, 10000);
+    };
+
+    show();
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [streaming]);
 
   // ── Auto-scroll ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -175,8 +229,9 @@ export default function ChatPanel({ activeConversationId, onConversationCreated 
       ]);
     } finally {
       setStreaming(false);
+      onStreamEnd?.();
     }
-  }, [input, streaming, provider, model, onConversationCreated]);
+  }, [input, streaming, provider, model, onConversationCreated, onStreamEnd]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -261,7 +316,7 @@ export default function ChatPanel({ activeConversationId, onConversationCreated 
                 </span>
               ) : msg.role === "assistant" ? (
                 <div className="markdown-body">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                 </div>
               ) : (
                 <span className="whitespace-pre-wrap">{msg.content}</span>
@@ -270,6 +325,25 @@ export default function ChatPanel({ activeConversationId, onConversationCreated 
           </div>
         ))}
         <div ref={bottomRef} />
+      </div>
+
+      {/* Quip bubble */}
+      <div
+        className="px-3 shrink-0 transition-all duration-500"
+        style={{ height: quipVisible ? "28px" : "0px", overflow: "hidden" }}
+      >
+        <span
+          className="inline-block text-xs italic px-2 py-0.5 rounded-full"
+          style={{
+            background: "#292524",
+            color: "#a8a29e",
+            border: "1px solid #3c3836",
+            opacity: quipVisible ? 1 : 0,
+            transition: "opacity 0.4s ease",
+          }}
+        >
+          {QUIPS[quipIndex]}
+        </span>
       </div>
 
       {/* Input bar */}
