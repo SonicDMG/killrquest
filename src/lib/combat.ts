@@ -54,83 +54,129 @@ function pickAbility(
   return attackAbilities[Math.floor(Math.random() * attackAbilities.length)];
 }
 
-export function resolveTurn(
-  turn: number,
-  attacker: Hero | Monster,
-  attackerHp: number,
-  defender: Hero | Monster,
-  defenderHp: number,
-  attackerIsHero: boolean
-): CombatLogEntry {
-  const ability = pickAbility(attacker, attackerHp);
-
-  let hit = false;
-  let damage: number | undefined;
-  let healing: number | undefined;
-  let roll = 0;
-  let total = 0;
-  const ac = defender.armorClass;
-
-  let newAttackerHp = attackerHp;
-  let newDefenderHp = defenderHp;
-
-  if (ability?.type === "healing") {
-    const healAmt = rollDice(ability.healingDice ?? "1d4");
-    newAttackerHp = Math.min(attacker.maxHitPoints, attackerHp + healAmt);
-    healing = healAmt;
-    hit = true;
-    roll = 0;
-    total = 0;
-  } else {
-    const damageDie =
-      ability?.damageDice ?? attacker.damageDie;
-    const result = resolveAttack(attacker.attackBonus, ac, damageDie);
-    hit = result.hit;
-    damage = result.damage;
-    roll = result.roll;
-    total = result.total;
-    if (hit) newDefenderHp = Math.max(0, defenderHp - (damage ?? 0));
-  }
-
-  const heroHp = attackerIsHero ? newAttackerHp : newDefenderHp;
-  const monsterHp = attackerIsHero ? newDefenderHp : newAttackerHp;
-
-  return {
-    turn,
-    attacker: attacker.name,
-    target: ability?.type === "healing" ? attacker.name : defender.name,
-    roll,
-    total,
-    ac,
-    hit,
-    damage,
-    healing,
-    abilityUsed: ability?.name,
-    resultHp: { hero: heroHp, monster: monsterHp },
-  };
+/** Pick a random living target from the opposing side */
+function pickTarget<T extends { _id: string }>(
+  pool: T[],
+  hpArr: number[]
+): number {
+  const alive = pool
+    .map((_, i) => i)
+    .filter((i) => hpArr[i] > 0);
+  if (alive.length === 0) return -1;
+  return alive[Math.floor(Math.random() * alive.length)];
 }
 
-export function runCombat(hero: Hero, monster: Monster): CombatLogEntry[] {
+export function runRosterCombat(
+  heroes: Hero[],
+  monsters: Monster[]
+): CombatLogEntry[] {
   const log: CombatLogEntry[] = [];
-  let heroHp = hero.hitPoints;
-  let monsterHp = monster.hitPoints;
+  const heroHp = heroes.map((h) => h.hitPoints);
+  const monsterHp = monsters.map((m) => m.hitPoints);
   let turn = 1;
-  const MAX_TURNS = 100;
+  const MAX_TURNS = 200;
 
-  while (heroHp > 0 && monsterHp > 0 && turn <= MAX_TURNS) {
-    // Hero attacks
-    const heroEntry = resolveTurn(turn, hero, heroHp, monster, monsterHp, true);
-    heroHp = heroEntry.resultHp.hero;
-    monsterHp = heroEntry.resultHp.monster;
-    log.push(heroEntry);
+  while (turn <= MAX_TURNS) {
+    const heroesAlive = heroHp.some((hp) => hp > 0);
+    const monstersAlive = monsterHp.some((hp) => hp > 0);
+    if (!heroesAlive || !monstersAlive) break;
 
-    if (monsterHp <= 0) break;
+    // ── Hero phase: each living hero acts ──────────────────────────────────
+    for (let hi = 0; hi < heroes.length; hi++) {
+      if (heroHp[hi] <= 0) continue;
+      if (!monsterHp.some((hp) => hp > 0)) break;
 
-    // Monster attacks
-    const monsterEntry = resolveTurn(turn, monster, monsterHp, hero, heroHp, false);
-    heroHp = monsterEntry.resultHp.hero;
-    monsterHp = monsterEntry.resultHp.monster;
-    log.push(monsterEntry);
+      const hero = heroes[hi];
+      const ability = pickAbility(hero, heroHp[hi]);
+
+      let hit = false, damage: number | undefined, healing: number | undefined;
+      let roll = 0, total = 0, ac = 0;
+      let targetIdx = -1;
+
+      if (ability?.type === "healing") {
+        // Heals self
+        const healAmt = rollDice(ability.healingDice ?? "1d4");
+        heroHp[hi] = Math.min(hero.maxHitPoints, heroHp[hi] + healAmt);
+        healing = healAmt;
+        hit = true;
+        targetIdx = hi;
+      } else {
+        targetIdx = pickTarget(monsters, monsterHp);
+        if (targetIdx === -1) break;
+        const target = monsters[targetIdx];
+        ac = target.armorClass;
+        const damageDie = ability?.damageDice ?? hero.damageDie;
+        const result = resolveAttack(hero.attackBonus, ac, damageDie);
+        hit = result.hit;
+        damage = result.damage;
+        roll = result.roll;
+        total = result.total;
+        if (hit) monsterHp[targetIdx] = Math.max(0, monsterHp[targetIdx] - damage);
+      }
+
+      log.push({
+        turn,
+        attacker: hero.name,
+        attackerIdx: hi,
+        attackerIsHero: true,
+        target: ability?.type === "healing" ? hero.name : monsters[targetIdx].name,
+        targetIdx,
+        roll, total, ac, hit, damage, healing,
+        abilityUsed: ability?.name,
+        resultHp: { heroes: [...heroHp], monsters: [...monsterHp] },
+      });
+
+      if (!monsterHp.some((hp) => hp > 0)) break;
+    }
+
+    if (!monsterHp.some((hp) => hp > 0)) break;
+
+    // ── Monster phase: each living monster acts ────────────────────────────
+    for (let mi = 0; mi < monsters.length; mi++) {
+      if (monsterHp[mi] <= 0) continue;
+      if (!heroHp.some((hp) => hp > 0)) break;
+
+      const monster = monsters[mi];
+      const ability = pickAbility(monster, monsterHp[mi]);
+
+      let hit = false, damage: number | undefined, healing: number | undefined;
+      let roll = 0, total = 0, ac = 0;
+      let targetIdx = -1;
+
+      if (ability?.type === "healing") {
+        const healAmt = rollDice(ability.healingDice ?? "1d4");
+        monsterHp[mi] = Math.min(monster.maxHitPoints, monsterHp[mi] + healAmt);
+        healing = healAmt;
+        hit = true;
+        targetIdx = mi;
+      } else {
+        targetIdx = pickTarget(heroes, heroHp);
+        if (targetIdx === -1) break;
+        const target = heroes[targetIdx];
+        ac = target.armorClass;
+        const damageDie = ability?.damageDice ?? monster.damageDie;
+        const result = resolveAttack(monster.attackBonus, ac, damageDie);
+        hit = result.hit;
+        damage = result.damage;
+        roll = result.roll;
+        total = result.total;
+        if (hit) heroHp[targetIdx] = Math.max(0, heroHp[targetIdx] - damage);
+      }
+
+      log.push({
+        turn,
+        attacker: monster.name,
+        attackerIdx: mi,
+        attackerIsHero: false,
+        target: ability?.type === "healing" ? monster.name : heroes[targetIdx].name,
+        targetIdx,
+        roll, total, ac, hit, damage, healing,
+        abilityUsed: ability?.name,
+        resultHp: { heroes: [...heroHp], monsters: [...monsterHp] },
+      });
+
+      if (!heroHp.some((hp) => hp > 0)) break;
+    }
 
     turn++;
   }

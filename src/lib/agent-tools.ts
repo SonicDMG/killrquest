@@ -144,15 +144,10 @@ async function searchBattles(query: string, limit = 5) {
     .toArray();
   return docs.map((d) => ({
     foughtAt: d.foughtAt,
-    hero: d.hero,
-    heroClass: d.heroClass,
-    monster: d.monster,
+    heroes: d.heroes,
+    monsters: d.monsters,
     winner: d.winner,
     turns: d.turns,
-    heroFinalHp: d.heroFinalHp,
-    heroMaxHp: d.heroMaxHp,
-    monsterFinalHp: d.monsterFinalHp,
-    monsterMaxHp: d.monsterMaxHp,
     abilitiesUsed: d.abilitiesUsed,
   }));
 }

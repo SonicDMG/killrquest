@@ -6,10 +6,12 @@ import type { Hero, Monster } from "@/lib/types";
 interface Props {
   character: Hero | Monster;
   selected: boolean;
+  /** 0-based position in the roster; -1 if not selected */
+  rosterIndex?: number;
   onClick: () => void;
 }
 
-export default function CharacterCard({ character, selected, onClick }: Props) {
+export default function CharacterCard({ character, selected, rosterIndex = -1, onClick }: Props) {
   const [imgError, setImgError] = useState(false);
   const hero = character as Hero;
 
@@ -47,6 +49,15 @@ export default function CharacterCard({ character, selected, onClick }: Props) {
             className="absolute inset-0 opacity-20 pointer-events-none"
             style={{ backgroundColor: character.color }}
           />
+        )}
+        {/* Roster position badge */}
+        {selected && rosterIndex >= 0 && (
+          <div
+            className="absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold z-10"
+            style={{ background: "#b45309", color: "#fef3c7", fontFamily: "serif" }}
+          >
+            {rosterIndex + 1}
+          </div>
         )}
         {/* Selected warm glow */}
         {selected && (

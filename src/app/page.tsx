@@ -9,20 +9,28 @@ import CombatArena from "@/components/CombatArena";
 export default function Home() {
   const [heroes, setHeroes] = useState<Hero[]>([]);
   const [monsters, setMonsters] = useState<Monster[]>([]);
-  const [selectedHero, setSelectedHero] = useState<Hero | null>(null);
-  const [selectedMonster, setSelectedMonster] = useState<Monster | null>(null);
+  const [heroRoster, setHeroRoster] = useState<Hero[]>([]);
+  const [monsterRoster, setMonsterRoster] = useState<Monster[]>([]);
 
-  const handleHeroClick = (hero: Hero) => {
-    setSelectedHero((prev) => (prev?._id === hero._id ? null : hero));
+  const toggleHero = (hero: Hero) => {
+    setHeroRoster((prev) =>
+      prev.some((h) => h._id === hero._id)
+        ? prev.filter((h) => h._id !== hero._id)
+        : [...prev, hero]
+    );
   };
 
-  const handleMonsterClick = (monster: Monster) => {
-    setSelectedMonster((prev) => (prev?._id === monster._id ? null : monster));
+  const toggleMonster = (monster: Monster) => {
+    setMonsterRoster((prev) =>
+      prev.some((m) => m._id === monster._id)
+        ? prev.filter((m) => m._id !== monster._id)
+        : [...prev, monster]
+    );
   };
 
   const handleReset = () => {
-    setSelectedHero(null);
-    setSelectedMonster(null);
+    setHeroRoster([]);
+    setMonsterRoster([]);
   };
 
   return (
@@ -78,9 +86,16 @@ export default function Home() {
         {/* LEFT — Heroes */}
         <aside className="w-72 xl:w-80 shrink-0 flex flex-col border-r border-gray-800 overflow-hidden">
           <div className="px-4 pt-4 pb-3 border-b border-gray-800 space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-              Hero Roster
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                Hero Roster
+              </h2>
+              {heroRoster.length > 0 && (
+                <span className="text-xs font-bold text-yellow-400 font-mono">
+                  {heroRoster.length} selected
+                </span>
+              )}
+            </div>
             <SearchBar
               collection="heroes"
               onResults={(hits) => setHeroes(hits.map((h) => h.doc as Hero))}
@@ -92,8 +107,9 @@ export default function Home() {
               <CharacterCard
                 key={hero._id}
                 character={hero}
-                selected={selectedHero?._id === hero._id}
-                onClick={() => handleHeroClick(hero)}
+                selected={heroRoster.some((h) => h._id === hero._id)}
+                rosterIndex={heroRoster.findIndex((h) => h._id === hero._id)}
+                onClick={() => toggleHero(hero)}
               />
             ))}
           </div>
@@ -108,8 +124,8 @@ export default function Home() {
           </div>
           <div className="flex-1 overflow-hidden p-6" style={{ minHeight: 0 }}>
             <CombatArena
-              hero={selectedHero}
-              monster={selectedMonster}
+              heroes={heroRoster}
+              monsters={monsterRoster}
               onReset={handleReset}
             />
           </div>
@@ -118,9 +134,16 @@ export default function Home() {
         {/* RIGHT — Monsters */}
         <aside className="w-72 xl:w-80 shrink-0 flex flex-col border-l border-gray-800 overflow-hidden">
           <div className="px-4 pt-4 pb-3 border-b border-gray-800 space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-              Monster Roster
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                Monster Roster
+              </h2>
+              {monsterRoster.length > 0 && (
+                <span className="text-xs font-bold text-red-400 font-mono">
+                  {monsterRoster.length} selected
+                </span>
+              )}
+            </div>
             <SearchBar
               collection="monsters"
               onResults={(hits: SearchHit<Hero | Monster>[]) => setMonsters(hits.map((h) => h.doc as Monster))}
@@ -132,8 +155,9 @@ export default function Home() {
               <CharacterCard
                 key={monster._id}
                 character={monster}
-                selected={selectedMonster?._id === monster._id}
-                onClick={() => handleMonsterClick(monster)}
+                selected={monsterRoster.some((m) => m._id === monster._id)}
+                rosterIndex={monsterRoster.findIndex((m) => m._id === monster._id)}
+                onClick={() => toggleMonster(monster)}
               />
             ))}
           </div>

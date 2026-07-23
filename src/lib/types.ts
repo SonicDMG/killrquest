@@ -47,6 +47,10 @@ export interface Monster {
 export interface CombatLogEntry {
   turn: number;
   attacker: string;
+  /** index into the heroes/monsters array for attacker/target */
+  attackerIdx: number;
+  targetIdx: number;
+  attackerIsHero: boolean;
   target: string;
   roll: number;
   total: number;
@@ -55,21 +59,17 @@ export interface CombatLogEntry {
   damage?: number;
   healing?: number;
   abilityUsed?: string;
-  resultHp: { hero: number; monster: number };
+  /** Full HP snapshots after this action */
+  resultHp: { heroes: number[]; monsters: number[] };
 }
 
 export interface BattleRecord {
   _id?: string;
   foughtAt: string;
-  hero: string;
-  heroClass: string | null;
-  monster: string;
-  winner: string;
+  heroes: string;          // comma-separated names
+  monsters: string;        // comma-separated names
+  winner: "heroes" | "monsters" | "draw";
   turns: number;
-  heroFinalHp: number;
-  heroMaxHp: number;
-  monsterFinalHp: number;
-  monsterMaxHp: number;
   abilitiesUsed: string[];
   $vectorize: string;
 }

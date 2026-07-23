@@ -5,11 +5,11 @@ import type { CombatLogEntry } from "@/lib/types";
 
 interface Props {
   entries: CombatLogEntry[];
-  heroName: string;
+  heroNames?: string[]; // kept for future use / external callers
   winner?: string; // name of winner once battle is done
 }
 
-export default function CombatLog({ entries, heroName, winner }: Props) {
+export default function CombatLog({ entries, winner }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom whenever entries grow or winner appears
@@ -41,7 +41,7 @@ export default function CombatLog({ entries, heroName, winner }: Props) {
         className="parchment-paper overflow-y-auto space-y-1 p-3 flex-1"
       >
         {entries.map((entry, i) => {
-          const isHero = entry.attacker === heroName;
+          const isHero = entry.attackerIsHero;
           const isHealing = entry.healing !== undefined;
 
           // Per-type row colours matching reference
@@ -71,7 +71,11 @@ export default function CombatLog({ entries, heroName, winner }: Props) {
                     <span className="font-semibold">{entry.abilityUsed ?? "heals"}</span>
                     {" — restores "}
                     <span className="font-bold text-green-700">{entry.healing} HP</span>
-                    {` (→ ${isHero ? entry.resultHp.hero : entry.resultHp.monster} HP)`}
+                    {` (→ ${
+                      isHero
+                        ? entry.resultHp.heroes[entry.attackerIdx] ?? 0
+                        : entry.resultHp.monsters[entry.attackerIdx] ?? 0
+                    } HP)`}
                   </>
                 ) : (
                   <>

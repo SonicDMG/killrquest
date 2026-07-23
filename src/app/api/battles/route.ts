@@ -11,9 +11,7 @@ export async function POST(req: NextRequest) {
   }
 
   const {
-    hero, heroClass, monster, winner, turns,
-    heroFinalHp, heroMaxHp, monsterFinalHp, monsterMaxHp,
-    abilitiesUsed,
+    heroes, monsters, winner, turns, abilitiesUsed,
   } = body as Omit<BattleRecord, "_id" | "foughtAt" | "$vectorize">;
 
   const abilitySummary =
@@ -22,23 +20,16 @@ export async function POST(req: NextRequest) {
       : "";
 
   const vectorize =
-    `${hero}${heroClass ? ` (${heroClass})` : ""} fought ${monster}. ` +
-    `${winner} won in ${turns} turn${turns === 1 ? "" : "s"}. ` +
-    `${hero} ended with ${heroFinalHp}/${heroMaxHp} HP. ` +
-    `${monster} ended with ${monsterFinalHp}/${monsterMaxHp} HP.` +
+    `${heroes} fought ${monsters}. ` +
+    `${winner === "heroes" ? heroes : winner === "monsters" ? monsters : "Neither side"} won in ${turns} turn${turns === 1 ? "" : "s"}.` +
     abilitySummary;
 
   const record: BattleRecord = {
     foughtAt: new Date().toISOString(),
-    hero,
-    heroClass: heroClass ?? null,
-    monster,
+    heroes,
+    monsters,
     winner,
     turns,
-    heroFinalHp,
-    heroMaxHp,
-    monsterFinalHp,
-    monsterMaxHp,
     abilitiesUsed,
     $vectorize: vectorize,
   };
