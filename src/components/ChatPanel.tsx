@@ -2,73 +2,121 @@
 
 import { useRef, useState, useEffect, useCallback, KeyboardEvent } from "react";
 import ReactMarkdown from "react-markdown";
+import type { Provider } from "@/lib/types";
 
 type Role = "user" | "assistant";
-interface Message {
+interface DisplayMessage {
   role: Role;
   content: string;
 }
 
-const DEFAULT_MODEL = process.env.NEXT_PUBLIC_OLLAMA_MODEL ?? "glm-5.2:cloud";
+interface ProviderInfo {
+  id: Provider;
+  label: string;
+}
 
-export default function ChatPanel() {
-  const [messages, setMessages] = useState<Message[]>([]);
+interface Props {
+  activeConversationId: string | null;
+  onConversationCreated: (id: string) => void;
+}
+
+const OLLAMA_DEFAULT = process.env.NEXT_PUBLIC_OLLAMA_MODEL ?? "glm-5.2:cloud";
+
+export default function ChatPanel({ activeConversationId, onConversationCreated }: Props) {
+  const [displayMessages, setDisplayMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
-  const [model, setModel] = useState(DEFAULT_MODEL);
-  const [models, setModels] = useState<string[]>([]);
-  const [modelsLoading, setModelsLoading] = useState(true);
-  const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Fetch available tool-capable models on mount
+  // Provider / model state
+  const [providers, setProviders] = useState<ProviderInfo[]>([{ id: "ollama", label: "Ollama" }]);
+  const [provider, setProvider] = useState<Provider>("ollama");
+  const [models, setModels] = useState<string[]>([]);
+  const [model, setModel] = useState(OLLAMA_DEFAULT);
+  const [modelsLoading, setModelsLoading] = useState(true);
+
+  const bottomRef = useRef<HTMLDivElement>(null);
+  // Track which conversation the current displayMessages belong to
+  const activeIdRef = useRef<string | null>(null);
+
+  // ── Fetch providers on mount ───────────────────────────────────────────────
   useEffect(() => {
-    fetch("/api/agent/models")
+    fetch("/api/agent/providers")
       .then((r) => r.json())
-      .then((data: { models: string[] }) => {
-        if (data.models.length > 0) {
-          setModels(data.models);
-          // Keep current model if it's in the list, otherwise use first
-          setModel((prev) =>
-            data.models.includes(prev) ? prev : data.models[0]
-          );
-        }
+      .then((data: { providers: ProviderInfo[] }) => {
+        if (data.providers.length > 0) setProviders(data.providers);
       })
-      .catch(() => {/* leave defaults */})
-      .finally(() => setModelsLoading(false));
+      .catch(() => {});
   }, []);
 
-  // Auto-scroll on every new token
+  // ── Fetch models when provider changes ────────────────────────────────────
+  useEffect(() => {
+    setModelsLoading(true);
+    fetch(`/api/agent/models?provider=${provider}`)
+      .then((r) => r.json())
+      .then((data: { models: string[] }) => {
+        const list = data.models ?? [];
+        setModels(list);
+        setModel(list[0] ?? OLLAMA_DEFAULT);
+      })
+      .catch(() => {})
+      .finally(() => setModelsLoading(false));
+  }, [provider]);
+
+  // ── Load messages when active conversation changes ─────────────────────────
+  useEffect(() => {
+    if (activeConversationId === null) {
+      setDisplayMessages([]);
+      activeIdRef.current = null;
+      return;
+    }
+    if (activeConversationId === activeIdRef.current) return;
+
+    activeIdRef.current = activeConversationId;
+    fetch(`/api/agent/conversations/${activeConversationId}`)
+      .then((r) => r.json())
+      .then((data: { conversation?: { messages?: { role: string; content: string | null }[] } }) => {
+        const msgs = (data.conversation?.messages ?? [])
+          .filter((m) => m.role === "user" || m.role === "assistant")
+          .map((m) => ({ role: m.role as Role, content: m.content ?? "" }));
+        setDisplayMessages(msgs);
+      })
+      .catch(() => {});
+  }, [activeConversationId]);
+
+  // ── Auto-scroll ────────────────────────────────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [displayMessages]);
 
+  // ── Send message ───────────────────────────────────────────────────────────
   const sendMessage = useCallback(async () => {
     const text = input.trim();
     if (!text || streaming) return;
 
-    const userMsg: Message = { role: "user", content: text };
-    const history = [...messages, userMsg];
-    setMessages(history);
+    setDisplayMessages((prev) => [
+      ...prev,
+      { role: "user", content: text },
+      { role: "assistant", content: "" },
+    ]);
     setInput("");
     setStreaming(true);
-
-    // Append empty assistant placeholder
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
     try {
       const res = await fetch("/api/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          provider,
           model,
-          messages: history.map((m) => ({ role: m.role, content: m.content })),
+          message: text,
+          conversationId: activeIdRef.current ?? undefined,
         }),
       });
 
       if (!res.ok || !res.body) {
-        setMessages((prev) => [
+        setDisplayMessages((prev) => [
           ...prev.slice(0, -1),
-          { role: "assistant", content: "⚠️ Agent unavailable. Check Ollama is running." },
+          { role: "assistant", content: "⚠️ Agent unavailable." },
         ]);
         return;
       }
@@ -91,10 +139,17 @@ export default function ChatPanel() {
           const payload = trimmed.slice(5).trim();
           if (payload === "[DONE]") break;
           try {
-            const { token } = JSON.parse(payload) as { token: string };
-            if (token) {
-              accumulated += token;
-              setMessages((prev) => [
+            const parsed = JSON.parse(payload) as
+              | { conversationId: string }
+              | { token: string }
+              | { error: string };
+
+            if ("conversationId" in parsed) {
+              activeIdRef.current = parsed.conversationId;
+              onConversationCreated(parsed.conversationId);
+            } else if ("token" in parsed) {
+              accumulated += parsed.token;
+              setDisplayMessages((prev) => [
                 ...prev.slice(0, -1),
                 { role: "assistant", content: accumulated },
               ]);
@@ -105,14 +160,14 @@ export default function ChatPanel() {
         }
       }
     } catch {
-      setMessages((prev) => [
+      setDisplayMessages((prev) => [
         ...prev.slice(0, -1),
         { role: "assistant", content: "⚠️ Network error reaching the agent." },
       ]);
     } finally {
       setStreaming(false);
     }
-  }, [input, messages, streaming, model]);
+  }, [input, streaming, provider, model, onConversationCreated]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -124,11 +179,24 @@ export default function ChatPanel() {
   return (
     <div className="flex flex-col h-full" style={{ minHeight: 0 }}>
 
-      {/* Model picker */}
+      {/* Provider + Model picker */}
       <div
-        className="px-3 py-1.5 flex items-center gap-2 shrink-0"
+        className="px-3 py-1.5 flex items-center gap-2 shrink-0 flex-wrap"
         style={{ borderBottom: "1px solid #292524" }}
       >
+        <span className="text-xs shrink-0" style={{ color: "#78716c" }}>Provider:</span>
+        <select
+          value={provider}
+          onChange={(e) => setProvider(e.target.value as Provider)}
+          disabled={streaming}
+          className="text-xs rounded px-2 py-1 outline-none disabled:opacity-50"
+          style={{ background: "#1c1917", color: "#e7e5e4", border: "1px solid #3c3836" }}
+        >
+          {providers.map((p) => (
+            <option key={p.id} value={p.id}>{p.label}</option>
+          ))}
+        </select>
+
         <span className="text-xs shrink-0" style={{ color: "#78716c" }}>Model:</span>
         {modelsLoading ? (
           <span className="text-xs" style={{ color: "#57534e" }}>Loading…</span>
@@ -140,11 +208,7 @@ export default function ChatPanel() {
             onChange={(e) => setModel(e.target.value)}
             disabled={streaming}
             className="flex-1 text-xs rounded px-2 py-1 outline-none disabled:opacity-50"
-            style={{
-              background: "#1c1917",
-              color: "#e7e5e4",
-              border: "1px solid #3c3836",
-            }}
+            style={{ background: "#1c1917", color: "#e7e5e4", border: "1px solid #3c3836" }}
           >
             {models.map((m) => (
               <option key={m} value={m}>{m}</option>
@@ -155,7 +219,7 @@ export default function ChatPanel() {
 
       {/* Message list */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3" style={{ minHeight: 0 }}>
-        {messages.length === 0 && (
+        {displayMessages.length === 0 && (
           <div className="text-center text-sm mt-8" style={{ color: "#78716c" }}>
             <p className="text-2xl mb-2">🎲</p>
             <p className="font-serif italic" style={{ color: "#a8a29e" }}>
@@ -167,7 +231,7 @@ export default function ChatPanel() {
           </div>
         )}
 
-        {messages.map((msg, i) => (
+        {displayMessages.map((msg, i) => (
           <div
             key={i}
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
@@ -176,17 +240,8 @@ export default function ChatPanel() {
               className="max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed break-words"
               style={
                 msg.role === "user"
-                  ? {
-                      background: "#92400e",
-                      color: "#fef3c7",
-                      borderBottomRightRadius: "4px",
-                    }
-                  : {
-                      background: "#1c1917",
-                      color: "#e7e5e4",
-                      border: "1px solid #292524",
-                      borderBottomLeftRadius: "4px",
-                    }
+                  ? { background: "#92400e", color: "#fef3c7", borderBottomRightRadius: "4px" }
+                  : { background: "#1c1917", color: "#e7e5e4", border: "1px solid #292524", borderBottomLeftRadius: "4px" }
               }
             >
               {msg.role === "assistant" && msg.content === "" && streaming ? (

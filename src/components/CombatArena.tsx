@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { Hero, Monster, CombatLogEntry } from "@/lib/types";
+import type { Hero, Monster, CombatLogEntry, ConversationDoc } from "@/lib/types";
 import { runCombat } from "@/lib/combat";
 import CombatLog from "./CombatLog";
 import ChatPanel from "./ChatPanel";
+import ConversationList from "./ConversationList";
 
 // ── TASK-02: triggerCombatAnimation ──────────────────────────────────────────
 function triggerCombatAnimation(
@@ -438,6 +439,8 @@ function ChronicleOverlay({
 export default function CombatArena({ hero, monster, onReset }: Props) {
   const [state, setState] = useState<CombatState>("idle");
   const [activeTab, setActiveTab] = useState<"log" | "chat">("log");
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<ConversationDoc[]>([]);
   const [allEntries, setAllEntries] = useState<CombatLogEntry[]>([]);
   const [displayedEntries, setDisplayedEntries] = useState<CombatLogEntry[]>([]);
   const [heroHp, setHeroHp] = useState(0);
@@ -447,6 +450,31 @@ export default function CombatArena({ hero, monster, onReset }: Props) {
   // TASK-04: refs for BattleVisual DOM nodes (used by triggerCombatAnimation)
   const heroCardRef = useRef<HTMLDivElement>(null);
   const monsterCardRef = useRef<HTMLDivElement>(null);
+
+  // Fetch conversation list on mount and whenever a new conversation is created
+  const refreshConversations = useCallback(() => {
+    fetch("/api/agent/conversations")
+      .then((r) => r.json())
+      .then((data: { conversations: ConversationDoc[] }) => {
+        setConversations(data.conversations ?? []);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => { refreshConversations(); }, [refreshConversations]);
+
+  const handleConversationCreated = useCallback((id: string) => {
+    setActiveConversationId(id);
+    refreshConversations();
+  }, [refreshConversations]);
+
+  const handleSelectConversation = useCallback((id: string) => {
+    setActiveConversationId(id);
+  }, []);
+
+  const handleNewConversation = useCallback(() => {
+    setActiveConversationId(null);
+  }, []);
 
   // Reset when combatants change
   useEffect(() => {
@@ -672,7 +700,22 @@ export default function CombatArena({ hero, monster, onReset }: Props) {
               </div>
             )
           ) : (
-            <ChatPanel />
+            <div className="flex h-full" style={{ minHeight: 0 }}>
+              <div className="shrink-0" style={{ minHeight: 0, width: "200px", minWidth: "200px" }}>
+                <ConversationList
+                  conversations={conversations}
+                  activeId={activeConversationId}
+                  onSelect={handleSelectConversation}
+                  onNew={handleNewConversation}
+                />
+              </div>
+              <div className="flex-1" style={{ minHeight: 0 }}>
+                <ChatPanel
+                  activeConversationId={activeConversationId}
+                  onConversationCreated={handleConversationCreated}
+                />
+              </div>
+            </div>
           )}
         </div>
         </div>{/* end tab wrapper */}
