@@ -58,9 +58,16 @@ export async function getConversation(
   return conversationsCollection.findOne({ _id: id });
 }
 
+export async function deleteConversation(id: string) {
+  await ensureConversationsCollection();
+  return conversationsCollection.deleteOne({ _id: id });
+}
+
 export async function listConversations(): Promise<ConversationDoc[]> {
   await ensureConversationsCollection();
   return conversationsCollection
-    .find({}, { sort: { createdAt: -1 }, limit: 50 })
+    .find({})
+    .sort({ createdAt: -1 })
+    .limit(100)
     .toArray();
 }

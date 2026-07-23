@@ -7,9 +7,10 @@ interface Props {
   activeId: string | null;
   onSelect: (id: string) => void;
   onNew: () => void;
+  onDelete: (id: string) => void;
 }
 
-export default function ConversationList({ conversations, activeId, onSelect, onNew }: Props) {
+export default function ConversationList({ conversations, activeId, onSelect, onNew, onDelete }: Props) {
   return (
     <div
       className="flex flex-col h-full"
@@ -49,21 +50,35 @@ export default function ConversationList({ conversations, activeId, onSelect, on
           </p>
         )}
         {conversations.map((c) => (
-          <button
+          <div
             key={c._id}
-            onClick={() => onSelect(c._id)}
-            className="w-full text-left px-3 py-2 text-xs transition-colors"
+            className="group relative flex items-stretch"
             style={{
               background: c._id === activeId ? "#292524" : "transparent",
-              color: c._id === activeId ? "#e7e5e4" : "#a8a29e",
               borderLeft: c._id === activeId ? "2px solid #b45309" : "2px solid transparent",
             }}
           >
-            <div className="truncate font-medium">{c.label || "Untitled"}</div>
-            <div className="truncate mt-0.5" style={{ color: "#57534e", fontSize: "10px" }}>
-              {c.provider} · {new Date(c.createdAt).toLocaleString()}
-            </div>
-          </button>
+            <button
+              onClick={() => onSelect(c._id)}
+              className="flex-1 text-left px-3 py-2 text-xs min-w-0"
+              style={{ color: c._id === activeId ? "#e7e5e4" : "#a8a29e" }}
+            >
+              <div className="truncate font-medium">{c.label || "Untitled"}</div>
+              <div className="truncate mt-0.5" style={{ color: "#57534e", fontSize: "10px" }}>
+                {c.provider} · {new Date(c.createdAt).toLocaleString()}
+              </div>
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(c._id); }}
+              title="Delete conversation"
+              className="opacity-0 group-hover:opacity-100 shrink-0 px-2 transition-opacity"
+              style={{ color: "#78716c" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#ef4444")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "#78716c")}
+            >
+              ✕
+            </button>
+          </div>
         ))}
       </div>
     </div>

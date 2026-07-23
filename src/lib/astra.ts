@@ -18,10 +18,10 @@ export function ensureConversationsCollection(): Promise<void> {
     conversationsReady = db
       .createCollection("conversations_v1")
       .then(() => {})
-      .catch((e) => {
+      .catch((e: unknown) => {
         console.error("[astra] failed to create conversations_v1:", e);
-        conversationsReady = null; // allow retry
+        conversationsReady = null; // allow retry next request
       });
   }
-  return conversationsReady;
+  return conversationsReady!;
 }

@@ -17,7 +17,7 @@ interface ProviderInfo {
 
 interface Props {
   activeConversationId: string | null;
-  onConversationCreated: (id: string) => void;
+  onConversationCreated: (id: string, meta: { provider: Provider; model: string; label: string }) => void;
 }
 
 const OLLAMA_DEFAULT = process.env.NEXT_PUBLIC_OLLAMA_MODEL ?? "glm-5.2:cloud";
@@ -69,18 +69,23 @@ export default function ChatPanel({ activeConversationId, onConversationCreated 
       activeIdRef.current = null;
       return;
     }
-    if (activeConversationId === activeIdRef.current) return;
 
+    // Track this load so a stale response from a previous id doesn't clobber state
+    let cancelled = false;
     activeIdRef.current = activeConversationId;
+
     fetch(`/api/agent/conversations/${activeConversationId}`)
       .then((r) => r.json())
       .then((data: { conversation?: { messages?: { role: string; content: string | null }[] } }) => {
+        if (cancelled) return;
         const msgs = (data.conversation?.messages ?? [])
           .filter((m) => m.role === "user" || m.role === "assistant")
           .map((m) => ({ role: m.role as Role, content: m.content ?? "" }));
         setDisplayMessages(msgs);
       })
       .catch(() => {});
+
+    return () => { cancelled = true; };
   }, [activeConversationId]);
 
   // ── Auto-scroll ────────────────────────────────────────────────────────────
@@ -146,7 +151,11 @@ export default function ChatPanel({ activeConversationId, onConversationCreated 
 
             if ("conversationId" in parsed) {
               activeIdRef.current = parsed.conversationId;
-              onConversationCreated(parsed.conversationId);
+              onConversationCreated(parsed.conversationId, {
+                provider,
+                model,
+                label: text.slice(0, 40),
+              });
             } else if ("token" in parsed) {
               accumulated += parsed.token;
               setDisplayMessages((prev) => [

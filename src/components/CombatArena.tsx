@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { Hero, Monster, CombatLogEntry, ConversationDoc } from "@/lib/types";
+import type { Hero, Monster, CombatLogEntry, ConversationDoc, Provider } from "@/lib/types";
 import { runRosterCombat } from "@/lib/combat";
 import CombatLog from "./CombatLog";
 import ChatPanel from "./ChatPanel";
@@ -492,10 +492,26 @@ export default function CombatArena({ heroes, monsters, onReset }: Props) {
 
   useEffect(() => { refreshConversations(); }, [refreshConversations]);
 
-  const handleConversationCreated = useCallback((id: string) => {
+  const handleConversationCreated = useCallback((
+    id: string,
+    meta: { provider: Provider; model: string; label: string }
+  ) => {
+    const optimistic: ConversationDoc = {
+      _id: id,
+      createdAt: new Date().toISOString(),
+      label: meta.label,
+      provider: meta.provider,
+      model: meta.model,
+    };
+    setConversations((prev) => [optimistic, ...prev]);
     setActiveConversationId(id);
-    refreshConversations();
-  }, [refreshConversations]);
+  }, []);
+
+  const handleDeleteConversation = useCallback((id: string) => {
+    setConversations((prev) => prev.filter((c) => c._id !== id));
+    setActiveConversationId((prev) => (prev === id ? null : prev));
+    fetch(`/api/agent/conversations/${id}`, { method: "DELETE" }).catch(() => {});
+  }, []);
 
   const handleSelectConversation = useCallback((id: string) => {
     setActiveConversationId(id);
@@ -741,6 +757,7 @@ export default function CombatArena({ heroes, monsters, onReset }: Props) {
                     activeId={activeConversationId}
                     onSelect={handleSelectConversation}
                     onNew={handleNewConversation}
+                    onDelete={handleDeleteConversation}
                   />
                 </div>
                 <div className="flex-1" style={{ minHeight: 0 }}>
