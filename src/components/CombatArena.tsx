@@ -563,11 +563,13 @@ export default function CombatArena({ hero, monster, onReset }: Props) {
     onReset();
   }, [onReset]);
 
-  // "Next battle" keeps the log, just resets to idle for new selection
+  // "Next battle" resets internal state but keeps hero/monster selections
   const handleNewBattle = useCallback(() => {
+    setState("idle");
+    setDisplayedEntries([]);
+    setAllEntries([]);
     setChronicleOpen(false);
-    handleReset();
-  }, [handleReset]);
+  }, []);
 
   const heroWon = state === "done" && heroHp > 0 && monsterHp <= 0;
   const monsterWon = state === "done" && monsterHp > 0 && heroHp <= 0;
