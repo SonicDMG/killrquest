@@ -6,21 +6,19 @@ import type { CombatLogEntry } from "@/lib/types";
 interface Props {
   entries: CombatLogEntry[];
   heroName: string;
+  winner?: string; // name of winner once battle is done
 }
 
-export default function CombatLog({ entries, heroName }: Props) {
+export default function CombatLog({ entries, heroName, winner }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to bottom (newest entry) whenever entries grow
+  // Scroll to bottom whenever entries grow or winner appears
   useEffect(() => {
     const el = containerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [entries.length]);
+  }, [entries.length, winner]);
 
   if (entries.length === 0) return null;
-
-  // Newest-first display (mirror reference app)
-  const reversed = [...entries].reverse();
 
   return (
     <div
@@ -43,7 +41,7 @@ export default function CombatLog({ entries, heroName }: Props) {
         className="parchment-paper overflow-y-auto space-y-1 p-3"
         style={{ maxHeight: "320px" }}
       >
-        {reversed.map((entry, i) => {
+        {entries.map((entry, i) => {
           const isHero = entry.attacker === heroName;
           const isHealing = entry.healing !== undefined;
 
@@ -103,6 +101,12 @@ export default function CombatLog({ entries, heroName }: Props) {
             </div>
           );
         })}
+        {/* Outcome banner — at bottom, newest-first order */}
+        {winner && (
+          <div className="text-xs rounded px-2 py-1.5 text-center font-bold font-serif bg-amber-100 text-amber-900 border border-amber-400 tracking-wide">
+            🏆 {winner} wins!
+          </div>
+        )}
       </div>
     </div>
   );
