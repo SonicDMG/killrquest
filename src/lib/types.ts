@@ -25,6 +25,7 @@ export interface Hero {
   description: string;
   imageUrl: string;
   imagePosition?: { offsetX: number; offsetY: number };
+  imagePositionWide?: { offsetX: number; offsetY: number };
   color?: string;
   isDefault?: boolean;
 }
@@ -41,6 +42,7 @@ export interface Monster {
   description: string;
   imageUrl: string;
   imagePosition?: { offsetX: number; offsetY: number };
+  imagePositionWide?: { offsetX: number; offsetY: number };
   color?: string;
 }
 

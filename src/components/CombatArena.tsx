@@ -6,6 +6,7 @@ import { runRosterCombat } from "@/lib/combat";
 import CombatLog from "./CombatLog";
 import ChatPanel from "./ChatPanel";
 import ConversationList from "./ConversationList";
+import ImagePanContainer from "./ImagePanContainer";
 
 // ── TASK-02: triggerCombatAnimation ──────────────────────────────────────────
 function triggerCombatAnimation(
@@ -89,8 +90,16 @@ function CombatantCard({
   cardRef: React.RefObject<HTMLDivElement>;
   state: CombatState;
 }) {
-  const [imgError, setImgError] = useState(false);
   const defeated = state !== "idle" && currentHp <= 0;
+  const collection = isHero ? "heroes" : "monsters";
+
+  const handleCommit = useCallback((x: number, y: number) => {
+    fetch(`/api/${collection}/${character._id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imagePositionWide: { offsetX: x, offsetY: y } }),
+    }).catch(() => {});
+  }, [character._id, collection]);
 
   return (
     <div
@@ -105,41 +114,38 @@ function CombatantCard({
         minWidth: 0,
       }}
     >
-      {!imgError && character.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={character.imageUrl}
-          alt={character.name}
-          className="absolute inset-0 w-full h-full object-cover"
-          style={isHero ? undefined : { transform: "scaleX(-1)" }}
-          onError={() => setImgError(true)}
-        />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-stone-800">
-          <span className="text-3xl">{isHero ? "⚔️" : "👹"}</span>
+      <ImagePanContainer
+        imgSrc={character.imageUrl}
+        imgAlt={character.name}
+        offsetX={character.imagePositionWide?.offsetX ?? character.imagePosition?.offsetX ?? 50}
+        offsetY={character.imagePositionWide?.offsetY ?? 0}
+        onCommit={handleCommit}
+        flipX={!isHero}
+        className="absolute inset-0 w-full h-full"
+      >
+        {/* Color tint */}
+        {character.color && (
+          <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundColor: character.color }} />
+        )}
+        {/* Name + HP overlay */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-2 pt-4 pb-1 pointer-events-none">
+          <div
+            className="text-xs font-bold truncate"
+            style={{ color: isHero ? "#fde68a" : "#fca5a5", fontFamily: "serif" }}
+          >
+            {character.name}
+          </div>
+          <HpBar current={currentHp} max={character.maxHitPoints} />
+          <div className="text-xs font-mono text-white/70">
+            {currentHp}/{character.maxHitPoints}
+          </div>
         </div>
-      )}
-      {character.color && (
-        <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundColor: character.color }} />
-      )}
-      {/* Name + HP overlay */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-2 pt-4 pb-1">
-        <div
-          className="text-xs font-bold truncate"
-          style={{ color: isHero ? "#fde68a" : "#fca5a5", fontFamily: "serif" }}
-        >
-          {character.name}
-        </div>
-        <HpBar current={currentHp} max={character.maxHitPoints} />
-        <div className="text-xs font-mono text-white/70">
-          {currentHp}/{character.maxHitPoints}
-        </div>
-      </div>
-      {defeated && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-3xl">💀</span>
-        </div>
-      )}
+        {defeated && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="text-3xl">💀</span>
+          </div>
+        )}
+      </ImagePanContainer>
     </div>
   );
 }

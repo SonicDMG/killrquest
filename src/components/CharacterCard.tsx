@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef } from "react";
 import type { Hero, Monster } from "@/lib/types";
+import ImagePanContainer from "./ImagePanContainer";
 
 interface Props {
   character: Hero | Monster;
@@ -9,11 +10,19 @@ interface Props {
   /** 0-based position in the roster; -1 if not selected */
   rosterIndex?: number;
   onClick: () => void;
+  /** Called when the user commits a new image position */
+  onPositionChange?: (id: string, collection: "heroes" | "monsters", x: number, y: number) => void;
 }
 
-export default function CharacterCard({ character, selected, rosterIndex = -1, onClick }: Props) {
-  const [imgError, setImgError] = useState(false);
+export default function CharacterCard({
+  character,
+  selected,
+  rosterIndex = -1,
+  onClick,
+  onPositionChange,
+}: Props) {
   const hero = character as Hero;
+  const collection: "heroes" | "monsters" = hero.class !== undefined ? "heroes" : "monsters";
 
   const ringClass = selected
     ? "ring-4 ring-yellow-400 ring-offset-2 ring-offset-gray-900"
@@ -22,38 +31,61 @@ export default function CharacterCard({ character, selected, rosterIndex = -1, o
   const borderColor = selected ? "#b45309" : "#57534e";
   const bgColor = selected ? "#1c1008" : "#1c1917";
 
+  // Suppress the card's onClick when the image drag moved the pointer
+  const didDragRef = useRef(false);
+
+  const handleCommit = useCallback(
+    (x: number, y: number) => {
+      didDragRef.current = true;
+      if (onPositionChange) {
+        onPositionChange(character._id, collection, x, y);
+      } else {
+        // Default: PATCH directly
+        fetch(`/api/${collection}/${character._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imagePosition: { offsetX: x, offsetY: y } }),
+        }).catch(() => {});
+      }
+    },
+    [character._id, collection, onPositionChange]
+  );
+
+  const handleClick = useCallback(() => {
+    if (didDragRef.current) {
+      didDragRef.current = false;
+      return;
+    }
+    onClick();
+  }, [onClick]);
+
   return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left rounded-xl overflow-hidden transition-all focus:outline-none ${ringClass}`}
+    <div
+      className={`w-full text-left rounded-xl overflow-hidden transition-all ${ringClass}`}
       style={{ background: bgColor, border: `2px solid ${borderColor}` }}
     >
-      {/* Image */}
-      <div className="relative h-36 w-full overflow-hidden" style={{ background: "#292524" }}>
-        {!imgError && character.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={character.imageUrl}
-            alt={character.name}
-            className="absolute inset-0 w-full h-full object-cover"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center" style={{ background: "#292524" }}>
-            <span className="text-4xl">⚔️</span>
-          </div>
-        )}
+      {/* Image — pannable */}
+      <ImagePanContainer
+        imgSrc={character.imageUrl}
+        imgAlt={character.name}
+        offsetX={character.imagePosition?.offsetX ?? 50}
+        offsetY={character.imagePosition?.offsetY ?? 20}
+        onCommit={handleCommit}
+        className="relative h-36 w-full"
+        style={{ background: "#292524", cursor: undefined }}
+        onClick={handleClick}
+      >
         {/* Color tint overlay */}
         {character.color && (
           <div
-            className="absolute inset-0 opacity-20 pointer-events-none"
+            className="absolute inset-0 opacity-20 pointer-events-none z-10"
             style={{ backgroundColor: character.color }}
           />
         )}
         {/* Roster position badge */}
         {selected && rosterIndex >= 0 && (
           <div
-            className="absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold z-10"
+            className="absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold z-20"
             style={{ background: "#b45309", color: "#fef3c7", fontFamily: "serif" }}
           >
             {rosterIndex + 1}
@@ -61,12 +93,15 @@ export default function CharacterCard({ character, selected, rosterIndex = -1, o
         )}
         {/* Selected warm glow */}
         {selected && (
-          <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: "inset 0 0 20px rgba(180,83,9,0.3)" }} />
+          <div className="absolute inset-0 pointer-events-none z-10" style={{ boxShadow: "inset 0 0 20px rgba(180,83,9,0.3)" }} />
         )}
-      </div>
+      </ImagePanContainer>
 
-      {/* Body */}
-      <div className="p-3 space-y-2">
+      {/* Clickable body — selecting the character */}
+      <button
+        onClick={handleClick}
+        className="w-full text-left p-3 space-y-2 focus:outline-none"
+      >
         <div>
           <h3
             className="font-bold text-sm leading-tight"
@@ -108,7 +143,7 @@ export default function CharacterCard({ character, selected, rosterIndex = -1, o
             ))}
           </div>
         )}
-      </div>
-    </button>
+      </button>
+    </div>
   );
 }

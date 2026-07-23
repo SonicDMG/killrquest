@@ -11,3 +11,13 @@ export async function GET(
   if (!hero) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ hero });
 }
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: "invalid body" }, { status: 400 });
+  await heroesCollection.updateOne({ _id: params.id }, { $set: body });
+  return NextResponse.json({ ok: true });
+}

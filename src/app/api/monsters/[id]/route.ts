@@ -12,3 +12,13 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ monster });
 }
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: "invalid body" }, { status: 400 });
+  await monstersCollection.updateOne({ _id: params.id }, { $set: body });
+  return NextResponse.json({ ok: true });
+}
