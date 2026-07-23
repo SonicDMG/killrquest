@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback, KeyboardEvent } from "react";
+import ReactMarkdown from "react-markdown";
 
 type Role = "user" | "assistant";
 interface Message {
@@ -8,11 +9,33 @@ interface Message {
   content: string;
 }
 
+const DEFAULT_MODEL = process.env.NEXT_PUBLIC_OLLAMA_MODEL ?? "glm-5.2:cloud";
+
 export default function ChatPanel() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [model, setModel] = useState(DEFAULT_MODEL);
+  const [models, setModels] = useState<string[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Fetch available tool-capable models on mount
+  useEffect(() => {
+    fetch("/api/agent/models")
+      .then((r) => r.json())
+      .then((data: { models: string[] }) => {
+        if (data.models.length > 0) {
+          setModels(data.models);
+          // Keep current model if it's in the list, otherwise use first
+          setModel((prev) =>
+            data.models.includes(prev) ? prev : data.models[0]
+          );
+        }
+      })
+      .catch(() => {/* leave defaults */})
+      .finally(() => setModelsLoading(false));
+  }, []);
 
   // Auto-scroll on every new token
   useEffect(() => {
@@ -29,7 +52,7 @@ export default function ChatPanel() {
     setInput("");
     setStreaming(true);
 
-    // Append an empty assistant placeholder
+    // Append empty assistant placeholder
     setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
     try {
@@ -37,6 +60,7 @@ export default function ChatPanel() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          model,
           messages: history.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
@@ -81,7 +105,7 @@ export default function ChatPanel() {
     } finally {
       setStreaming(false);
     }
-  }, [input, messages, streaming]);
+  }, [input, messages, streaming, model]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -92,6 +116,36 @@ export default function ChatPanel() {
 
   return (
     <div className="flex flex-col h-full" style={{ minHeight: 0 }}>
+
+      {/* Model picker */}
+      <div
+        className="px-3 py-1.5 flex items-center gap-2 shrink-0"
+        style={{ borderBottom: "1px solid #292524" }}
+      >
+        <span className="text-xs shrink-0" style={{ color: "#78716c" }}>Model:</span>
+        {modelsLoading ? (
+          <span className="text-xs" style={{ color: "#57534e" }}>Loading…</span>
+        ) : models.length === 0 ? (
+          <span className="text-xs" style={{ color: "#b45309" }}>No tool-capable models found</span>
+        ) : (
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            disabled={streaming}
+            className="flex-1 text-xs rounded px-2 py-1 outline-none disabled:opacity-50"
+            style={{
+              background: "#1c1917",
+              color: "#e7e5e4",
+              border: "1px solid #3c3836",
+            }}
+          >
+            {models.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        )}
+      </div>
+
       {/* Message list */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3" style={{ minHeight: 0 }}>
         {messages.length === 0 && (
@@ -112,7 +166,7 @@ export default function ChatPanel() {
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className="max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words"
+              className="max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed break-words"
               style={
                 msg.role === "user"
                   ? {
@@ -134,8 +188,12 @@ export default function ChatPanel() {
                   <span className="animate-bounce" style={{ animationDelay: "150ms" }}>•</span>
                   <span className="animate-bounce" style={{ animationDelay: "300ms" }}>•</span>
                 </span>
+              ) : msg.role === "assistant" ? (
+                <div className="markdown-body">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
               ) : (
-                msg.content
+                <span className="whitespace-pre-wrap">{msg.content}</span>
               )}
             </div>
           </div>
@@ -145,7 +203,7 @@ export default function ChatPanel() {
 
       {/* Input bar */}
       <div
-        className="px-3 py-2 flex gap-2 items-end"
+        className="px-3 py-2 flex gap-2 items-end shrink-0"
         style={{ borderTop: "1px solid #292524" }}
       >
         <textarea

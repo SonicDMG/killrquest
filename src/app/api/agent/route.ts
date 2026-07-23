@@ -26,6 +26,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "messages array required" }, { status: 400 });
   }
 
+  // Allow client to override the model; fall back to env default
+  const model = (body.model as string | undefined) ?? OLLAMA_MODEL;
+
   const messages: ChatMessage[] = [
     { role: "system", content: SYSTEM_PROMPT },
     ...body.messages,
@@ -39,7 +42,7 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: OLLAMA_MODEL,
+        model,
         messages,
         tools: TOOLS,
         stream: false,
@@ -97,7 +100,7 @@ export async function POST(req: NextRequest) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: OLLAMA_MODEL,
+      model,
       messages,
       tools: TOOLS,
       stream: true,
