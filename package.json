@@ -3,22 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port $(node -e \"const net=require('net');function f(p){const s=net.createServer();s.once('error',()=>f(p+1));s.once('listening',()=>{s.close(()=>process.stdout.write(p+''));});s.listen(p)}f(parseInt(process.env.PORT)||3000)\")",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "@datastax/astra-db-ts": "^2.3.0",
+    "next": "14.2.35",
     "react": "^18",
-    "react-dom": "^18",
-    "next": "14.2.35"
+    "react-dom": "^18"
   },
   "devDependencies": {
-    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "postcss": "^8",
-    "tailwindcss": "^3.4.1"
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.9.3"
   }
 }
