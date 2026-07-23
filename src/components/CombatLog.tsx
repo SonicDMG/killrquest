@@ -22,12 +22,12 @@ export default function CombatLog({ entries, heroName, winner }: Props) {
 
   return (
     <div
-      className="rounded-t-lg border-t-4 border-l-4 border-r-4 overflow-hidden"
-      style={{ borderColor: "#5C4033" }}
+      className="flex flex-col h-full rounded-t-lg border-t-4 border-l-4 border-r-4 overflow-hidden"
+      style={{ borderColor: "#5C4033", minHeight: 0 }}
     >
       {/* Parchment header */}
       <div
-        className="px-4 py-2 flex items-center gap-2"
+        className="px-4 py-2 flex items-center gap-2 shrink-0"
         style={{ background: "#5C4033" }}
       >
         <span className="text-amber-100 font-bold text-sm" style={{ fontFamily: "serif" }}>
@@ -38,8 +38,7 @@ export default function CombatLog({ entries, heroName, winner }: Props) {
       {/* Parchment body */}
       <div
         ref={containerRef}
-        className="parchment-paper overflow-y-auto space-y-1 p-3"
-        style={{ maxHeight: "320px" }}
+        className="parchment-paper overflow-y-auto space-y-1 p-3 flex-1"
       >
         {entries.map((entry, i) => {
           const isHero = entry.attacker === heroName;

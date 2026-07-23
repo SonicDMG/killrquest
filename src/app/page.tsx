@@ -26,7 +26,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+    <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
       {/* Header */}
       <header className="border-b border-gray-800 px-6 h-14 flex items-center">
         <h1 className="text-2xl font-bold tracking-tight text-yellow-400">
@@ -100,13 +100,13 @@ export default function Home() {
         </aside>
 
         {/* CENTER — Combat */}
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <div className="px-6 pt-4 pb-3 border-b border-gray-800">
+        <main className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+          <div className="px-6 pt-4 pb-3 border-b border-gray-800 shrink-0">
             <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
               Combat Arena
             </h2>
           </div>
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-hidden p-6" style={{ minHeight: 0 }}>
             <CombatArena
               hero={selectedHero}
               monster={selectedMonster}

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { Hero, Monster, CombatLogEntry } from "@/lib/types";
 import { runCombat } from "@/lib/combat";
 import CombatLog from "./CombatLog";
+import ChatPanel from "./ChatPanel";
 
 // ── TASK-02: triggerCombatAnimation ──────────────────────────────────────────
 function triggerCombatAnimation(
@@ -436,6 +437,7 @@ function ChronicleOverlay({
 // ── Main arena ────────────────────────────────────────────────────────────────
 export default function CombatArena({ hero, monster, onReset }: Props) {
   const [state, setState] = useState<CombatState>("idle");
+  const [activeTab, setActiveTab] = useState<"log" | "chat">("log");
   const [allEntries, setAllEntries] = useState<CombatLogEntry[]>([]);
   const [displayedEntries, setDisplayedEntries] = useState<CombatLogEntry[]>([]);
   const [heroHp, setHeroHp] = useState(0);
@@ -519,9 +521,10 @@ export default function CombatArena({ hero, monster, onReset }: Props) {
 
   return (
     <>
-      <div className="flex flex-col h-full gap-4">
+      <div className="flex flex-col h-full" style={{ gap: "1rem", minHeight: 0 }}>
         {/* TASK-03/04: Battle visual — cards facing each other with animations */}
         {hero && monster && (
+          <div className="shrink-0">
           <BattleVisual
             hero={hero}
             monster={monster}
@@ -531,10 +534,11 @@ export default function CombatArena({ hero, monster, onReset }: Props) {
             monsterCardRef={monsterCardRef}
             state={state}
           />
+          </div>
         )}
 
         {/* Combatant stat cards */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 shrink-0">
           {hero ? (
             <StatCard character={hero} label="Hero" currentHp={heroHp} isHero />
           ) : (
@@ -557,7 +561,7 @@ export default function CombatArena({ hero, monster, onReset }: Props) {
           <button
             onClick={handleFight}
             disabled={!hero || !monster}
-            className="w-full py-3 rounded-xl font-bold text-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="shrink-0 w-full py-3 rounded-xl font-bold text-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             style={{
               background: !hero || !monster ? undefined : "linear-gradient(135deg,#92400e,#b45309)",
               color: "#fef3c7",
@@ -572,7 +576,7 @@ export default function CombatArena({ hero, monster, onReset }: Props) {
 
         {/* Fighting indicator */}
         {state === "fighting" && (
-          <div className="text-center py-1" style={{ color: "#92400e", fontFamily: "serif" }}>
+          <div className="text-center py-1 shrink-0" style={{ color: "#92400e", fontFamily: "serif" }}>
             <span className="font-bold italic">Combat in progress</span>
             <span className="waiting-indicator ml-2">
               <span className="waiting-dot" />
@@ -586,7 +590,7 @@ export default function CombatArena({ hero, monster, onReset }: Props) {
         {state === "done" && (
           <button
             onClick={() => setChronicleOpen(true)}
-            className="w-full py-2 rounded-xl font-bold transition-all"
+            className="w-full py-2 rounded-xl font-bold transition-all shrink-0"
             style={{
               background: "linear-gradient(135deg,#5C4033,#78350f)",
               color: "#fef3c7",
@@ -598,22 +602,55 @@ export default function CombatArena({ hero, monster, onReset }: Props) {
           </button>
         )}
 
-        {/* Combat log */}
-        {displayedEntries.length > 0 && (
-          <CombatLog
-            entries={displayedEntries}
-            heroName={hero?.name ?? ""}
-            winner={
-              state === "done"
-                ? heroWon
-                  ? hero?.name
-                  : monsterWon
-                  ? monster?.name
-                  : undefined
-                : undefined
-            }
-          />
-        )}
+        {/* Tab bar + content — fills remaining height */}
+        <div className="flex flex-col flex-1 overflow-hidden" style={{ minHeight: 0 }}>
+
+        {/* Tab bar */}
+        <div className="flex gap-1 shrink-0" style={{ borderBottom: "1px solid #292524" }}>
+          {(["log", "chat"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className="px-4 py-1.5 text-xs font-semibold tracking-wide rounded-t-lg transition-colors"
+              style={{
+                fontFamily: "serif",
+                background: activeTab === tab ? "#1c1917" : "transparent",
+                color: activeTab === tab ? "#fef3c7" : "#78716c",
+                borderBottom: activeTab === tab ? "2px solid #b45309" : "2px solid transparent",
+              }}
+            >
+              {tab === "log" ? "📜 Battle Log" : "💬 Chat"}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        <div className="flex-1 overflow-hidden" style={{ minHeight: 0, minWidth: 0 }}>
+          {activeTab === "log" ? (
+            displayedEntries.length > 0 ? (
+              <CombatLog
+                entries={displayedEntries}
+                heroName={hero?.name ?? ""}
+                winner={
+                  state === "done"
+                    ? heroWon
+                      ? hero?.name
+                      : monsterWon
+                      ? monster?.name
+                      : undefined
+                    : undefined
+                }
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-sm" style={{ color: "#57534e" }}>
+                {state === "idle" ? "No battle yet — pick a hero and monster to begin." : "Awaiting combat…"}
+              </div>
+            )
+          ) : (
+            <ChatPanel />
+          )}
+        </div>
+        </div>{/* end tab wrapper */}
       </div>
 
       {/* Chronicle overlay */}
