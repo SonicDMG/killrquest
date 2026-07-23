@@ -32,14 +32,18 @@ export default function Home() {
         <h1 className="text-2xl font-bold tracking-tight text-yellow-400">
           ⚔️ KillrQuest
         </h1>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3 select-none">
           <span className="text-xs text-gray-600 font-mono tracking-wide">powered by</span>
+          {/* Astra DB */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/assets/logo-astra.png"
-            alt="Astra DB"
-            className="h-5 w-5 rounded-sm opacity-70 object-contain"
-          />
+          <img src="/assets/logo-astra.png" alt="Astra DB" className="h-5 w-5 rounded-sm opacity-60 object-contain" />
+          <span className="text-xs text-gray-700 font-mono">+</span>
+          {/* NVIDIA vector search */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/logo-nvidia.svg" alt="NVIDIA" className="h-3.5 opacity-30 object-contain" style={{ filter: "invert(1)" }} />
+          <span className="text-xs text-gray-700 font-mono tracking-wide">vector search</span>
+          <span className="text-xs text-gray-700 font-mono">+</span>
+          <span className="text-xs text-gray-600 font-mono tracking-wide">lexical rerank</span>
         </div>
       </header>
 
