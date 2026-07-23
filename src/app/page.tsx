@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Hero, Monster } from "@/lib/types";
+import type { Hero, Monster, SearchHit } from "@/lib/types";
 import SearchBar from "@/components/SearchBar";
 import CharacterCard from "@/components/CharacterCard";
 import CombatArena from "@/components/CombatArena";
@@ -28,13 +28,19 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
       {/* Header */}
-      <header className="border-b border-gray-800 px-6 py-4">
+      <header className="border-b border-gray-800 px-6 h-14 flex items-center">
         <h1 className="text-2xl font-bold tracking-tight text-yellow-400">
           ⚔️ KillrQuest
         </h1>
-        <p className="text-xs text-gray-500 mt-0.5">
-          Powered by Astra DB — NVIDIA vector search + lexical rerank
-        </p>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs text-gray-600 font-mono tracking-wide">powered by</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/assets/logo-astra.png"
+            alt="Astra DB"
+            className="h-5 w-5 rounded-sm opacity-70 object-contain"
+          />
+        </div>
       </header>
 
       {/* Three-column layout */}
@@ -47,7 +53,7 @@ export default function Home() {
             </h2>
             <SearchBar
               collection="heroes"
-              onResults={(r) => setHeroes(r as Hero[])}
+              onResults={(hits) => setHeroes(hits.map((h) => h.doc as Hero))}
               placeholder="Search heroes…"
             />
           </div>
@@ -87,7 +93,7 @@ export default function Home() {
             </h2>
             <SearchBar
               collection="monsters"
-              onResults={(r) => setMonsters(r as Monster[])}
+              onResults={(hits: SearchHit<Hero | Monster>[]) => setMonsters(hits.map((h) => h.doc as Monster))}
               placeholder="Search monsters…"
             />
           </div>

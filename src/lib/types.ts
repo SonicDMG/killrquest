@@ -1,3 +1,8 @@
+export interface SearchHit<T> {
+  doc: T;
+  similarity: number | null; // 0–1, null when browsing without a query
+}
+
 export interface Ability {
   name: string;
   type: "attack" | "healing";
