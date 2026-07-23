@@ -6,5 +6,5 @@ const db = client.db(process.env.ASTRA_DB_ENDPOINT!, {
   keyspace: process.env.ASTRA_DB_KEYSPACE ?? "default_keyspace",
 });
 
-export const heroesCollection = db.collection<Hero>("heroes");
-export const monstersCollection = db.collection<Monster>("monsters");
+export const heroesCollection = db.collection<Hero>("heroes_v2");
+export const monstersCollection = db.collection<Monster>("monsters_v2");

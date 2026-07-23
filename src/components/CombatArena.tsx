@@ -600,7 +600,19 @@ export default function CombatArena({ hero, monster, onReset }: Props) {
 
         {/* Combat log */}
         {displayedEntries.length > 0 && (
-          <CombatLog entries={displayedEntries} heroName={hero?.name ?? ""} />
+          <CombatLog
+            entries={displayedEntries}
+            heroName={hero?.name ?? ""}
+            winner={
+              state === "done"
+                ? heroWon
+                  ? hero?.name
+                  : monsterWon
+                  ? monster?.name
+                  : undefined
+                : undefined
+            }
+          />
         )}
       </div>
 

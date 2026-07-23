@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q");
   const cursor = q
-    ? monstersCollection.find({}, { sort: { $lexical: q }, limit: 50 })
+    ? monstersCollection.find({}, { sort: { $vectorize: q }, limit: 50 })
     : monstersCollection.find({}, { limit: 100 });
   const all = await cursor.toArray();
   // Only surface monsters with a working external image URL, weakest first

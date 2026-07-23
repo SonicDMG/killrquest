@@ -33,7 +33,7 @@ export default function Home() {
           ⚔️ KillrQuest
         </h1>
         <p className="text-xs text-gray-500 mt-0.5">
-          Powered by Astra DB — lexical search + NVIDIA rerank
+          Powered by Astra DB — NVIDIA vector search + lexical rerank
         </p>
       </header>
 
