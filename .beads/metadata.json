@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "killrquest",
+  "project_id": "28030ada-1681-438b-9a17-f973f35a779e"
+}
