@@ -29,28 +29,49 @@ bd dolt push          # Push beads data to remote
 
 **Every new feature MUST follow this order:**
 
-1. **Spec first** — create `specs/<feature-name>/requirements.md` and `specs/<feature-name>/design.md`
-2. **Epic** — `bd create "<feature-name> — <summary>" --type epic --priority <0-4>`
-3. **Tasks** — `bd create "TASK-NN: ..." --parent <epic-id>` (one per deliverable)
-4. **Work** — `bd update <id> --claim` → implement → `bd close <id>`
-5. **Sync** — `bd dolt push` after closing tasks
+1. **Epic** — `bd create "<feature-name> — <summary>" --type epic`
+2. **Requirements** — one `feature` bead per REQ, with `--acceptance` criteria
+3. **Design decisions** — one `decision` bead per architecture choice, with `--design` notes
+4. **Tasks** — one `task` bead per implementation unit, under the epic
+5. **Work** — `bd update <id> --claim` → implement → `bd close <id>`
+6. **Sync** — `bd dolt push` after closing tasks
 
-Use the `/spec-code` skill for guided spec + task creation.
+Beads IS the spec. No separate markdown files needed.
 
-**Spec changes mid-feature:**
 ```bash
-# 1. Edit specs/<feature-name>/requirements.md
-# 2. Create a blocker bead
-bd create "REQ-NNN revised — <what changed>" --type task
+# Epic
+bd create "my-feature — summary" --type epic --priority 1
+
+# Requirement (REQ)
+bd create "REQ-001 — User can do X" --type feature --parent <epic-id> \
+  --description "Full requirement prose..." \
+  --acceptance "Specific, testable criteria"
+
+# Design decision (ADR)
+bd create "DESIGN: use Y approach for Z" --type decision --parent <epic-id> \
+  --description "Context and rationale..." \
+  --design "Implementation specifics, data shapes, tradeoffs"
+
+# Implementation task
+bd create "TASK-01: [lib] Create src/lib/foo.ts" --type task --parent <epic-id> \
+  --description "What this task delivers"
+```
+
+**When requirements change mid-feature:**
+```bash
+# 1. Update the existing feature bead
+bd update <req-bead-id> --description "Updated requirement prose..."
+# 2. Create a blocker task capturing what changed
+bd create "REQ-001 revised — <what changed>" --type task --parent <epic-id>
 # 3. Block affected tasks
 bd dep add <affected-task-id> <blocker-id>
-# Now bd ready will drop blocked tasks from the queue automatically
+# bd ready now drops blocked tasks from the queue automatically
 ```
 
 **Never:**
-- Create markdown TODO lists — use `bd create` instead
+- Create markdown spec or TODO files — beads IS the spec
 - Create MEMORY.md files — use `bd remember "insight"` instead
-- Write code before the spec and epic exist
+- Write code before the epic and requirements exist
 
 ## Architecture
 

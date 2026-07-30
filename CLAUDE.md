@@ -95,24 +95,26 @@ Next.js :3000
 
 **Every new feature MUST follow this order — no exceptions:**
 
-1. **Spec first** — create `specs/<feature-name>/requirements.md` and `specs/<feature-name>/design.md`
-2. **Beads epic** — `bd create "<feature-name> — <summary>" --type epic`
-3. **Beads tasks** — one `bd create` per task under the epic (`--parent <epic-id>`)
-4. **Implement** — claim a task (`bd update <id> --claim`), implement it, close it (`bd close <id>`)
-5. **Never skip the spec** — requirements and design docs stay in `specs/` as the human-readable record; beads tasks are the machine-queryable queue
+1. **Epic** — `bd create "<feature-name> — <summary>" --type epic`
+2. **Requirements** — one `feature` bead per REQ (`--acceptance` for testable criteria)
+3. **Design decisions** — one `decision` bead per architecture choice (`--design` for specifics)
+4. **Tasks** — one `task` bead per implementation unit under the epic
+5. **Implement** — `bd update <id> --claim` → implement → `bd close <id>`
 
-Use the `/spec-code` skill for guided spec creation.
+**Beads is the spec.** No separate markdown files. To generate human-readable output on demand:
+```bash
+bd list --all --parent <epic-id> --json | jq '.[] | select(.issue_type=="feature") | {title, description, acceptance}'
+```
 
 **If requirements change mid-feature:**
-- Update `specs/<feature-name>/requirements.md`
-- Add a blocker bead: `bd create "REQ-NNN revised — <summary>" --type task`
-- Block affected tasks: `bd dep add <task-id> <blocker-id>`
+- `bd update <req-bead-id> --description "updated prose"`
+- `bd create "REQ-NNN revised — <what changed>" --type task --parent <epic-id>`
+- `bd dep add <affected-task-id> <blocker-id>`
 
 ## Conventions & Patterns
 
-- **No markdown TODO lists** — use `bd create` instead
+- **No markdown spec or TODO files** — beads is the spec; `bd create` for all tracking
 - **No MEMORY.md files** — use `bd remember "insight"` instead
 - All API routes in `src/app/api/` follow Next.js App Router conventions (`route.ts`)
 - Combat engine (`src/lib/combat.ts`) is pure — no side effects, no Astra calls
 - Provider credentials via env only: `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `OLLAMA_BASE_URL`
-- Spec files live in `specs/<feature-name>/` and are committed to git alongside source
