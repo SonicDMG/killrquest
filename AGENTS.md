@@ -51,6 +51,23 @@ bd dolt push          # Push beads data to remote
 
 **Beads IS the spec.** No separate markdown files.
 
+## Codebase Audit Rule
+
+**Every piece of shipped code must have a corresponding bead.**
+
+Before closing any session or generating a design document, audit the codebase against beads:
+
+1. **List all epics:** `bd list --all --json | jq -r '.[] | select(.issue_type=="epic") | .title'`
+2. **Walk the code surface:** check every file in `src/app/api/`, `src/components/`, `src/lib/` — each distinct feature, API route, component, and design decision must trace to a `feature` or `decision` bead under an epic.
+3. **For anything undocumented:** create the epic, `feature` beads (with `--acceptance`), `decision` beads (with `--design`), and immediately close them if already implemented.
+4. **Push:** `bd dolt push` after backfilling.
+
+**Signals that code is missing beads:**
+- A component or lib file with no matching epic/feature bead
+- An API route not covered by any REQ
+- A design pattern (e.g. fire-and-forget, CSS-only, DOM mutation) with no `decision` bead
+- A type in `types.ts` with no corresponding `feature` bead explaining why it exists
+
 ```bash
 # 1. Epic — the feature container
 bd create "auth — user login with JWT" --type epic --priority 1 \

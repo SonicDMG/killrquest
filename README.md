@@ -63,6 +63,48 @@ npm run dev
 
 Then open [http://localhost:3000](http://localhost:3000).
 
+---
+
+## Issue tracking & specs (beads)
+
+This project uses **[beads](https://github.com/gastownhall/beads)** (`bd`) for issue tracking. All requirements, design decisions, and tasks live as beads in a local Dolt database that travels with the repo — there are no separate markdown spec files.
+
+### Install beads
+
+```bash
+# Install the bd CLI
+npm install -g @gastownhall/beads
+
+# One-time: install the Dolt binary (beads will prompt if missing)
+# macOS
+brew install dolt
+
+# Linux / WSL
+curl -L https://github.com/dolthub/dolt/releases/latest/download/install.sh | bash
+```
+
+### Pull the issue data
+
+The beads database is stored as a git ref (`refs/dolt/data`) on the same remote as the code — separate from `refs/heads/*` so it never touches your branches.
+
+```bash
+bd dolt pull
+```
+
+### Basic commands
+
+```bash
+bd ready                    # find available work
+bd show <id>                # view an epic, feature, or task
+bd list --all               # list everything
+bd list --parent <epic-id>  # list children of an epic
+bd prime                    # full workflow context and command reference
+```
+
+### View the specs
+
+All requirements and design decisions are in beads. See [`specs/README.md`](specs/README.md) for the full epic list and commands to generate markdown documents on demand.
+
 ## Typical flow
 
 1. Search for a few heroes.
