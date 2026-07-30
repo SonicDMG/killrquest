@@ -58,20 +58,61 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 <!-- END BEADS INTEGRATION -->
 
 
-## Build & Test
-
-_Add your build and test commands here_
+## Build & Run
 
 ```bash
-# Example:
-# npm install
-# npm test
+npm install
+npm run dev       # dev server on :3000
+npm run build     # production build (must pass zero errors)
+npx tsc --noEmit  # type-check only
 ```
 
 ## Architecture Overview
 
-_Add a brief overview of your project architecture_
+```
+Next.js :3000
+  ├── src/app/api/agent/          ← agentic chat + provider/model/conversation routes
+  ├── src/app/api/heroes|monsters ← Astra search + point-read routes
+  ├── src/lib/
+  │     ├── types.ts              ← Hero, Monster, Ability, CombatLogEntry
+  │     ├── astra.ts              ← DataAPIClient singleton, collection exports
+  │     ├── combat.ts             ← turn-based combat engine (pure functions)
+  │     ├── llm.ts                ← chatStream() — Ollama, OpenAI, OpenRouter adapters
+  │     ├── conversations.ts      ← AstraDB conversation persistence
+  │     └── agent-tools.ts        ← SYSTEM_PROMPT, TOOLS, executeTool()
+  └── src/components/
+        ├── CharacterCard.tsx     ← hero/monster display card
+        ├── SearchBar.tsx         ← debounced search input
+        ├── CombatArena.tsx       ← fight orchestration + BattleVisual + animations
+        ├── CombatLog.tsx         ← scrollable turn-by-turn log
+        ├── ChatPanel.tsx         ← streaming SSE chat UI
+        └── ConversationList.tsx  ← conversation switcher sidebar
+```
+
+**Data:** AstraDB (heroes_v2, monsters_v2 collections for game data; conversations collection for chat persistence). No local database — all persistence is Astra.
+
+## Feature Development Workflow
+
+**Every new feature MUST follow this order — no exceptions:**
+
+1. **Spec first** — create `specs/<feature-name>/requirements.md` and `specs/<feature-name>/design.md`
+2. **Beads epic** — `bd create "<feature-name> — <summary>" --type epic`
+3. **Beads tasks** — one `bd create` per task under the epic (`--parent <epic-id>`)
+4. **Implement** — claim a task (`bd update <id> --claim`), implement it, close it (`bd close <id>`)
+5. **Never skip the spec** — requirements and design docs stay in `specs/` as the human-readable record; beads tasks are the machine-queryable queue
+
+Use the `/spec-code` skill for guided spec creation.
+
+**If requirements change mid-feature:**
+- Update `specs/<feature-name>/requirements.md`
+- Add a blocker bead: `bd create "REQ-NNN revised — <summary>" --type task`
+- Block affected tasks: `bd dep add <task-id> <blocker-id>`
 
 ## Conventions & Patterns
 
-_Add your project-specific conventions here_
+- **No markdown TODO lists** — use `bd create` instead
+- **No MEMORY.md files** — use `bd remember "insight"` instead
+- All API routes in `src/app/api/` follow Next.js App Router conventions (`route.ts`)
+- Combat engine (`src/lib/combat.ts`) is pure — no side effects, no Astra calls
+- Provider credentials via env only: `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `OLLAMA_BASE_URL`
+- Spec files live in `specs/<feature-name>/` and are committed to git alongside source

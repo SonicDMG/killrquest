@@ -1,4 +1,6 @@
-# Agent Instructions
+# Agent Instructions — killrquest
+
+killrquest is a Next.js workshop demo: hero/monster search via AstraDB, turn-based combat, and an agentic chat panel with multi-provider LLM support.
 
 This project uses **bd** (beads) for issue tracking. Run `bd prime` for full workflow context.
 
@@ -22,6 +24,50 @@ bd update <id> --claim  # Claim work atomically
 bd close <id>         # Complete work
 bd dolt push          # Push beads data to remote
 ```
+
+## Feature Development Workflow
+
+**Every new feature MUST follow this order:**
+
+1. **Spec first** — create `specs/<feature-name>/requirements.md` and `specs/<feature-name>/design.md`
+2. **Epic** — `bd create "<feature-name> — <summary>" --type epic --priority <0-4>`
+3. **Tasks** — `bd create "TASK-NN: ..." --parent <epic-id>` (one per deliverable)
+4. **Work** — `bd update <id> --claim` → implement → `bd close <id>`
+5. **Sync** — `bd dolt push` after closing tasks
+
+Use the `/spec-code` skill for guided spec + task creation.
+
+**Spec changes mid-feature:**
+```bash
+# 1. Edit specs/<feature-name>/requirements.md
+# 2. Create a blocker bead
+bd create "REQ-NNN revised — <what changed>" --type task
+# 3. Block affected tasks
+bd dep add <affected-task-id> <blocker-id>
+# Now bd ready will drop blocked tasks from the queue automatically
+```
+
+**Never:**
+- Create markdown TODO lists — use `bd create` instead
+- Create MEMORY.md files — use `bd remember "insight"` instead
+- Write code before the spec and epic exist
+
+## Architecture
+
+```
+Next.js :3000
+  src/app/api/agent/          — agentic chat, provider/model/conversation routes
+  src/app/api/heroes|monsters — Astra search + point-read routes
+  src/lib/types.ts            — Hero, Monster, Ability, CombatLogEntry
+  src/lib/astra.ts            — DataAPIClient singleton
+  src/lib/combat.ts           — pure turn-based combat engine
+  src/lib/llm.ts              — chatStream() Ollama/OpenAI/OpenRouter adapters
+  src/lib/conversations.ts    — AstraDB conversation persistence
+  src/lib/agent-tools.ts      — SYSTEM_PROMPT, TOOLS, executeTool()
+  src/components/             — CharacterCard, SearchBar, CombatArena, ChatPanel, ConversationList
+```
+
+**Build:** `npm run build` and `npx tsc --noEmit` must both pass zero errors before closing any task.
 
 ## Non-Interactive Shell Commands
 
