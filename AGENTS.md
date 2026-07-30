@@ -86,10 +86,55 @@ bd dep add <affected-task-id> <blocker-id>
 # bd ready automatically removes blocked tasks from the queue
 ```
 
-**To read requirements back as prose** (e.g. to generate a human-readable doc):
+## Generating Requirements and Design Docs on Demand
+
+Beads is the source of truth. Markdown is a derived output — generate it when needed, never maintain it separately.
+
+**List all epics** (to find the right `<epic-id>`):
+```bash
+bd list --all --json | jq -r '.[] | select(.issue_type=="epic") | .id + " — " + .title'
+```
+
+**Generate `requirements.md`** for an epic:
+```bash
+bd show <epic-id> --json | jq -r '.[0] | "# Requirements — \(.title)\n\n## User Story\n\n\(.description)\n"'
+bd list --all --parent <epic-id> --json \
+  | jq -r '.[] | select(.issue_type=="feature")
+    | "## \(.title)\n\n\(.description)\n\n**Acceptance criteria:**\n\(.acceptance // "—")\n"'
+```
+
+**Generate `design.md`** for an epic:
 ```bash
 bd list --all --parent <epic-id> --json \
-  | jq -r '.[] | select(.issue_type=="feature") | "### \(.title)\n\(.description)\n\nAcceptance: \(.acceptance // "—")\n"'
+  | jq -r '.[] | select(.issue_type=="decision")
+    | "## \(.title)\n\n\(.description)\n\n**Implementation notes:**\n\(.design // "—")\n"'
+```
+
+**Generate both into files** (pipe together):
+```bash
+EPIC_ID=<epic-id>
+
+{
+  echo "# Requirements — $(bd show $EPIC_ID --json | jq -r '.[0].title')"
+  echo ""
+  echo "## User Story"
+  echo ""
+  bd show $EPIC_ID --json | jq -r '.[0].description'
+  echo ""
+  echo "---"
+  echo ""
+  bd list --all --parent $EPIC_ID --json \
+    | jq -r '.[] | select(.issue_type=="feature")
+      | "## \(.title)\n\n\(.description)\n\n**Acceptance criteria:**  \n\(.acceptance // "—")\n\n---\n"'
+} > requirements.md
+
+{
+  echo "# Design — $(bd show $EPIC_ID --json | jq -r '.[0].title')"
+  echo ""
+  bd list --all --parent $EPIC_ID --json \
+    | jq -r '.[] | select(.issue_type=="decision")
+      | "## \(.title)\n\n\(.description)\n\n**Implementation notes:**  \n\(.design // "—")\n\n---\n"'
+} > design.md
 ```
 
 **Never:**
