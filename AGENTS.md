@@ -25,53 +25,77 @@ bd close <id>         # Complete work
 bd dolt push          # Push beads data to remote
 ```
 
+## Bead Types — What to Use When
+
+| Type | Flag | Use for | Appears in `bd ready`? |
+|---|---|---|---|
+| `epic` | `--type epic` | Feature container. Holds user story in `--description`. | No |
+| `feature` | `--type feature` | One requirement (REQ-NNN). Use `--acceptance` for testable criteria. | No |
+| `decision` | `--type decision` | One architecture/design decision (ADR). Use `--design` for specifics. | No |
+| `task` | `--type task` | One implementation unit of work. The only type agents pick up and claim. | **Yes** |
+| `bug` | `--type bug` | Defect to fix. Treated like a task — claimable. | **Yes** |
+| `chore` | `--type chore` | Housekeeping (deps, config, docs). Claimable. | **Yes** |
+
+`feature` and `decision` beads are **context nodes** — they describe what and why. `task`, `bug`, and `chore` beads are **work queue items** — they describe what to build. An agent running `bd ready` only sees work queue items; requirements and decisions stay visible via `bd show <epic-id>` or `bd list --parent <epic-id>`.
+
 ## Feature Development Workflow
 
 **Every new feature MUST follow this order:**
 
 1. **Epic** — `bd create "<feature-name> — <summary>" --type epic`
-2. **Requirements** — one `feature` bead per REQ, with `--acceptance` criteria
-3. **Design decisions** — one `decision` bead per architecture choice, with `--design` notes
-4. **Tasks** — one `task` bead per implementation unit, under the epic
+2. **Requirements** — one `feature` bead per REQ, with `--acceptance` for testable criteria
+3. **Design decisions** — one `decision` bead per architecture choice, with `--design` for specifics
+4. **Tasks** — one `task` bead per implementation unit under the epic
 5. **Work** — `bd update <id> --claim` → implement → `bd close <id>`
 6. **Sync** — `bd dolt push` after closing tasks
 
-Beads IS the spec. No separate markdown files needed.
+**Beads IS the spec.** No separate markdown files.
 
 ```bash
-# Epic
-bd create "my-feature — summary" --type epic --priority 1
+# 1. Epic — the feature container
+bd create "auth — user login with JWT" --type epic --priority 1 \
+  --description "As a user I want to log in so that my data is private."
 
-# Requirement (REQ)
-bd create "REQ-001 — User can do X" --type feature --parent <epic-id> \
-  --description "Full requirement prose..." \
-  --acceptance "Specific, testable criteria"
+# 2. Requirements — what must be true (not claimable, context only)
+bd create "REQ-001 — Login with email + password" --type feature --parent <epic-id> \
+  --description "User submits email and password. Server validates and returns a JWT." \
+  --acceptance "Valid credentials return 200 + {token}. Invalid return 401. Empty fields return 400."
 
-# Design decision (ADR)
-bd create "DESIGN: use Y approach for Z" --type decision --parent <epic-id> \
-  --description "Context and rationale..." \
-  --design "Implementation specifics, data shapes, tradeoffs"
+# 3. Design decisions — how we build it (not claimable, context only)
+bd create "DESIGN: stateless JWT, no session store" --type decision --parent <epic-id> \
+  --description "JWT stored in httpOnly cookie. No server-side session. RS256 signing." \
+  --design "Token expiry 1h. Refresh token in separate httpOnly cookie, 7d. Auth middleware reads cookie header."
 
-# Implementation task
-bd create "TASK-01: [lib] Create src/lib/foo.ts" --type task --parent <epic-id> \
-  --description "What this task delivers"
+# 4. Tasks — what to build (claimable by agents)
+bd create "TASK-01: [API] POST /api/auth/login — validate credentials, return JWT" \
+  --type task --parent <epic-id> --priority 1 \
+  --description "Implements REQ-001. See DESIGN: stateless JWT bead for token shape."
 ```
 
 **When requirements change mid-feature:**
 ```bash
-# 1. Update the existing feature bead
-bd update <req-bead-id> --description "Updated requirement prose..."
-# 2. Create a blocker task capturing what changed
-bd create "REQ-001 revised — <what changed>" --type task --parent <epic-id>
-# 3. Block affected tasks
+# 1. Update the requirement bead in-place
+bd update <feature-bead-id> --description "Updated prose..." --acceptance "Updated criteria..."
+
+# 2. Create a blocker task so affected work is gated
+bd create "REQ-001 revised — now requires email verification" \
+  --type task --parent <epic-id>
+
+# 3. Block the affected implementation tasks
 bd dep add <affected-task-id> <blocker-id>
-# bd ready now drops blocked tasks from the queue automatically
+# bd ready automatically removes blocked tasks from the queue
+```
+
+**To read requirements back as prose** (e.g. to generate a human-readable doc):
+```bash
+bd list --all --parent <epic-id> --json \
+  | jq -r '.[] | select(.issue_type=="feature") | "### \(.title)\n\(.description)\n\nAcceptance: \(.acceptance // "—")\n"'
 ```
 
 **Never:**
 - Create markdown spec or TODO files — beads IS the spec
 - Create MEMORY.md files — use `bd remember "insight"` instead
-- Write code before the epic and requirements exist
+- Write code before the epic and `feature` requirements exist
 
 ## Architecture
 
