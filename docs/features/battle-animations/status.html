@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Feature Status — battle-animations</title>
+<style>
+  body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 20px; background: #0d1626; color: #e8eef7; }
+  .hero, .card, .commands { border: 1px solid #2b3f58; border-radius: 12px; padding: 16px; margin-bottom: 16px; background: #122033; }
+  .legend { font-size: 0.9rem; color: #9fb0c9; margin-bottom: 8px; }
+  .version-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .version-cell { border: 1px solid #2b3f58; border-radius: 10px; padding: 8px 10px; background: #0f1b2d; font-size: 0.85rem; }
+  .item-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .id-pill { display: inline-flex; align-items: center; border: 1px solid #3e6f93; border-radius: 999px 0 0 999px; background: #173a57; color: #c7ecff; font-size: 0.8rem; padding: 3px 10px; cursor: pointer; white-space: nowrap; }
+  .copy-btn { width: 26px; height: 26px; border: 1px solid #3e6f93; border-left: none; border-radius: 0 999px 999px 0; background: #12324c; color: #9fb0c9; cursor: pointer; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center; transition: color 0.15s, background 0.15s; }
+  .copy-btn:hover { background: #1e4a6e; color: #c7ecff; }
+  .copy-btn.copied { color: #6ee7b7; }
+  .item-label { font-size: 0.85rem; color: #e8eef7; flex: 1; min-width: 120px; }
+  .check { color: #6ee7b7; font-size: 0.9rem; flex-shrink: 0; }
+  .missing-mark { color: #f87171; font-size: 0.9rem; flex-shrink: 0; }
+  .section-title { display: flex; justify-content: space-between; align-items: center; }
+  .decision-open > .item-row { border-left: 3px solid #fbbf24; padding-left: 8px; }
+  .decision-closed > .item-row { border-left: 3px solid #34d399; padding-left: 8px; }
+  .command-row { border: 1px solid #2b3f58; border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; font-family: monospace; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
+  .command-row.focus { border-color: #fbbf24; background: #3a2c12; }
+  details summary { cursor: pointer; color: #9fb0c9; font-size: 0.85rem; margin-bottom: 8px; }
+  .status-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; margin-left: 8px; }
+  .status-open { background: #1e3a5f; color: #7dd3fc; }
+  .status-closed { background: #14432a; color: #6ee7b7; }
+  .status-in_progress { background: #3b2f05; color: #fcd34d; }
+  h3 { color: #9fb0c9; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin: 16px 0 6px; }
+  .empty { color: #4a5568; font-size: 0.8rem; padding: 4px 0; }
+  .perf-tag { font-size: 0.7rem; background: #1a3a2a; color: #6ee7b7; border: 1px solid #34d399; border-radius: 4px; padding: 1px 6px; flex-shrink: 0; }
+  footer { text-align: center; font-size: 0.75rem; color: #4a5568; border-top: 1px solid #1e2d3d; padding-top: 16px; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <h1>Feature Status — battle-animations</h1>
+  <p style="color:#9fb0c9;margin-top:4px">combat card visual effects</p>
+  <div class="legend">IDs validated via <code>bd show &lt;id&gt;</code> — confirmed IDs show <span style="color:#6ee7b7">✓</span></div>
+  <div class="version-strip">
+    <div class="version-cell">Project: killrquest v0.1.0</div>
+    <div class="version-cell">Epic status: <span class="status-badge status-closed">closed</span></div>
+    <div class="version-cell">Children: 16</div>
+    <div class="version-cell">Validated: 17 / 17 <span style="color:#6ee7b7">✓</span></div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="section-title">
+    <h2>battle-animations</h2>
+    <span class="status-badge status-closed">closed</span>
+  </div>
+
+  <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066" data-cmd="cmd-killrquest-066">Epic: killrquest-066</span>
+    <button class="copy-btn" data-copy="killrquest-066" type="button" title="Copy ID">⎘</button>
+    <span class="item-label" style="color:#9fb0c9">Lunge, shake, flash, sparkle, and defeated-state CSS animations on hero/monster cards, triggered one-at-a-time in sync with the existing 150ms drip-feed timer.</span>
+    <span class="check">✓</span>
+  </div>
+
+  <h3>Requirements (8)</h3>
+  <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.8" data-cmd="cmd-killrquest-066-8">REQ: killrquest-066.8</span>
+    <button class="copy-btn" data-copy="killrquest-066.8" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">REQ-008 — Animations sync with drip-feed</span>
+    <span class="check">✓</span>
+  </div>
+  <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.7" data-cmd="cmd-killrquest-066-7">REQ: killrquest-066.7</span>
+    <button class="copy-btn" data-copy="killrquest-066.7" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">REQ-007 — Defeated card state</span>
+    <span class="check">✓</span>
+  </div>
+  <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.6" data-cmd="cmd-killrquest-066-6">REQ: killrquest-066.6</span>
+    <button class="copy-btn" data-copy="killrquest-066.6" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">REQ-006 — Healing sparkles</span>
+    <span class="check">✓</span>
+  </div>
+  <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.5" data-cmd="cmd-killrquest-066-5">REQ: killrquest-066.5</span>
+    <button class="copy-btn" data-copy="killrquest-066.5" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">REQ-005 — Flash effect on hit</span>
+    <span class="check">✓</span>
+  </div>
+  <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.4" data-cmd="cmd-killrquest-066-4">REQ: killrquest-066.4</span>
+    <button class="copy-btn" data-copy="killrquest-066.4" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">REQ-004 — Miss reaction on attacker</span>
+    <span class="check">✓</span>
+  </div>
+  <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.3" data-cmd="cmd-killrquest-066-3">REQ: killrquest-066.3</span>
+    <button class="copy-btn" data-copy="killrquest-066.3" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">REQ-003 — Hit reaction on defender</span>
+    <span class="check">✓</span>
+  </div>
+  <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.2" data-cmd="cmd-killrquest-066-2">REQ: killrquest-066.2</span>
+    <button class="copy-btn" data-copy="killrquest-066.2" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">REQ-002 — Attacker lunge animation</span>
+    <span class="check">✓</span>
+  </div>
+  <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.1" data-cmd="cmd-killrquest-066-1">REQ: killrquest-066.1</span>
+    <button class="copy-btn" data-copy="killrquest-066.1" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">REQ-001 — Battle visual panel</span>
+    <span class="check">✓</span>
+  </div>
+
+  <h3>Open tasks (0)</h3>
+  <p class="empty">None — all tasks complete.</p>
+
+  <h3>Open decisions (0)</h3>
+  <p class="empty">None.</p>
+
+  <h3>Resolved decisions (1)</h3>
+  <div class="decision-closed"><div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.9" data-cmd="cmd-killrquest-066-9">Design: killrquest-066.9</span>
+    <button class="copy-btn" data-copy="killrquest-066.9" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">DESIGN: DOM mutation via refs, no React re-renders</span>
+    <span class="check">✓</span>
+  </div></div>
+
+  <details>
+    <summary>Completed tasks (7)</summary>
+    <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.16" data-cmd="cmd-killrquest-066-16">Task: killrquest-066.16</span>
+    <button class="copy-btn" data-copy="killrquest-066.16" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">TASK-07: [verify] npx tsc --noEmit + npm run build clean</span>
+    <span class="check">✓</span>
+  </div>
+    <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.15" data-cmd="cmd-killrquest-066-15">Task: killrquest-066.15</span>
+    <button class="copy-btn" data-copy="killrquest-066.15" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">TASK-06: [UI] .battle-card-defeated toggled from heroHp/monsterHp props</span>
+    <span class="check">✓</span>
+  </div>
+    <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.14" data-cmd="cmd-killrquest-066-14">Task: killrquest-066.14</span>
+    <button class="copy-btn" data-copy="killrquest-066.14" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">TASK-05: [UI] Wire triggerCombatAnimation into drip-feed setInterval</span>
+    <span class="check">✓</span>
+  </div>
+    <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.13" data-cmd="cmd-killrquest-066-13">Task: killrquest-066.13</span>
+    <button class="copy-btn" data-copy="killrquest-066.13" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">TASK-04: [UI] heroCardRef and monsterCardRef refs passed to BattleVisual</span>
+    <span class="check">✓</span>
+  </div>
+    <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.12" data-cmd="cmd-killrquest-066-12">Task: killrquest-066.12</span>
+    <button class="copy-btn" data-copy="killrquest-066.12" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">TASK-03: [UI] BattleVisual component in CombatArena.tsx</span>
+    <span class="check">✓</span>
+  </div>
+    <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.11" data-cmd="cmd-killrquest-066-11">Task: killrquest-066.11</span>
+    <button class="copy-btn" data-copy="killrquest-066.11" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">TASK-02: [UI] triggerCombatAnimation helper function in CombatArena.tsx</span>
+    <span class="check">✓</span>
+  </div>
+    <div class="item-row">
+    <span class="id-pill" data-id="killrquest-066.10" data-cmd="cmd-killrquest-066-10">Task: killrquest-066.10</span>
+    <button class="copy-btn" data-copy="killrquest-066.10" type="button" title="Copy ID">⎘</button>
+    <span class="item-label">TASK-01: [CSS] globals.css — all animation keyframes and utility classes</span>
+    <span class="check">✓</span>
+  </div>
+  </details>
+</section>
+
+<section class="commands">
+  <h2>Beads command snippets</h2>
+  <div class="command-row" id="cmd-killrquest-066">
+    <span>bd show killrquest-066</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-16">
+    <span>bd show killrquest-066.16</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.16" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-15">
+    <span>bd show killrquest-066.15</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.15" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-14">
+    <span>bd show killrquest-066.14</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.14" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-13">
+    <span>bd show killrquest-066.13</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.13" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-12">
+    <span>bd show killrquest-066.12</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.12" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-11">
+    <span>bd show killrquest-066.11</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.11" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-10">
+    <span>bd show killrquest-066.10</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.10" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-9">
+    <span>bd show killrquest-066.9</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.9" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-8">
+    <span>bd show killrquest-066.8</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.8" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-7">
+    <span>bd show killrquest-066.7</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.7" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-6">
+    <span>bd show killrquest-066.6</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.6" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-5">
+    <span>bd show killrquest-066.5</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.5" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-4">
+    <span>bd show killrquest-066.4</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.4" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-3">
+    <span>bd show killrquest-066.3</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.3" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-2">
+    <span>bd show killrquest-066.2</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.2" type="button" title="Copy command">⎘</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-066-1">
+    <span>bd show killrquest-066.1</span>
+    <button class="copy-btn" data-copy="bd show killrquest-066.1" type="button" title="Copy command">⎘</button>
+  </div>
+</section>
+
+<script>
+(function() {
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.copy-btn');
+    if (!btn) return;
+    var text = btn.getAttribute('data-copy');
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = '✓'; btn.classList.add('copied');
+      setTimeout(function() { btn.textContent = '⎘'; btn.classList.remove('copied'); }, 1200);
+    }).catch(function() {
+      var ta = document.createElement('textarea'); ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      btn.textContent = '✓'; btn.classList.add('copied');
+      setTimeout(function() { btn.textContent = '⎘'; btn.classList.remove('copied'); }, 1200);
+    });
+  });
+  document.addEventListener('click', function(e) {
+    var pill = e.target.closest('.id-pill');
+    if (!pill) return;
+    var cmdId = pill.getAttribute('data-cmd');
+    if (!cmdId) return;
+    var el = document.getElementById(cmdId);
+    if (!el) return;
+    document.querySelectorAll('.command-row.focus').forEach(function(r) { r.classList.remove('focus'); });
+    el.classList.add('focus');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+})();
+</script>
+
+<footer>Made with IBM Bob &middot; Generated from Beads &middot; killrquest</footer>
+</body>
+</html>

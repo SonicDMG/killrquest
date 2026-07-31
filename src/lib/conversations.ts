@@ -55,7 +55,10 @@ export async function getConversation(
   id: string
 ): Promise<ConversationDoc | null> {
   await ensureConversationsCollection();
-  return conversationsCollection.findOne({ _id: id });
+  return conversationsCollection.findOne(
+    { _id: id },
+    { projection: { _id: 1, messages: 1 } }
+  );
 }
 
 export async function deleteConversation(id: string) {
@@ -65,7 +68,10 @@ export async function deleteConversation(id: string) {
 
 export async function listConversations(): Promise<ConversationDoc[]> {
   await ensureConversationsCollection();
-  const docs = await conversationsCollection.find({}).limit(100).toArray();
+  const docs = await conversationsCollection
+    .find({}, { projection: { _id: 1, createdAt: 1, label: 1, provider: 1, model: 1 } })
+    .limit(100)
+    .toArray();
   return docs.sort((a, b) =>
     (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
   );

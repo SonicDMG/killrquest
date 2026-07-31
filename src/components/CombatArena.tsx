@@ -769,7 +769,6 @@ export default function CombatArena({ heroes, monsters, onReset }: Props) {
                   <ChatPanel
                       activeConversationId={activeConversationId}
                       onConversationCreated={handleConversationCreated}
-                      onStreamEnd={refreshConversations}
                     />
                 </div>
               </div>

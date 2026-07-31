@@ -56,6 +56,8 @@ export default function ChatPanel({ activeConversationId, onConversationCreated,
   const bottomRef = useRef<HTMLDivElement>(null);
   // Track which conversation the current displayMessages belong to
   const activeIdRef = useRef<string | null>(null);
+  // Cache: conversationId → messages already loaded/streamed
+  const msgCacheRef = useRef<Map<string, DisplayMessage[]>>(new Map());
 
   // ── Fetch providers on mount ───────────────────────────────────────────────
   useEffect(() => {
@@ -82,9 +84,6 @@ export default function ChatPanel({ activeConversationId, onConversationCreated,
   }, [provider]);
 
   // ── Load messages when active conversation changes ─────────────────────────
-  // Only fires when the user explicitly switches to a different conversation.
-  // Streaming updates displayMessages in-place; we never re-fetch after a
-  // stream ends to avoid clobbering in-flight or just-finished responses.
   useEffect(() => {
     if (activeConversationId === null) {
       setDisplayMessages([]);
@@ -92,12 +91,20 @@ export default function ChatPanel({ activeConversationId, onConversationCreated,
       return;
     }
 
-    // Same conversation as what's already loaded — don't re-fetch.
+    // Same conversation already displayed — nothing to do.
     if (activeIdRef.current === activeConversationId) return;
 
-    let cancelled = false;
     activeIdRef.current = activeConversationId;
 
+    // Serve from cache instantly if already loaded.
+    const cached = msgCacheRef.current.get(activeConversationId);
+    if (cached) {
+      setDisplayMessages(cached);
+      return;
+    }
+
+    // First visit — fetch messages only (projection applied server-side).
+    let cancelled = false;
     fetch(`/api/agent/conversations/${activeConversationId}`)
       .then((r) => r.json())
       .then((data: { conversation?: { messages?: { role: string; content: string | null }[] } }) => {
@@ -105,6 +112,7 @@ export default function ChatPanel({ activeConversationId, onConversationCreated,
         const msgs = (data.conversation?.messages ?? [])
           .filter((m) => m.role === "user" || m.role === "assistant")
           .map((m) => ({ role: m.role as Role, content: m.content ?? "" }));
+        msgCacheRef.current.set(activeConversationId, msgs);
         setDisplayMessages(msgs);
       })
       .catch(() => {});
@@ -152,11 +160,17 @@ export default function ChatPanel({ activeConversationId, onConversationCreated,
     const text = input.trim();
     if (!text || streaming) return;
 
-    setDisplayMessages((prev) => [
-      ...prev,
-      { role: "user", content: text },
-      { role: "assistant", content: "" },
-    ]);
+    setDisplayMessages((prev) => {
+      const next: DisplayMessage[] = [
+        ...prev,
+        { role: "user", content: text },
+        { role: "assistant", content: "" },
+      ];
+      if (activeIdRef.current) {
+        msgCacheRef.current.set(activeIdRef.current, next);
+      }
+      return next;
+    });
     setInput("");
     setStreaming(true);
 
@@ -212,10 +226,17 @@ export default function ChatPanel({ activeConversationId, onConversationCreated,
               });
             } else if ("token" in parsed) {
               accumulated += parsed.token;
-              setDisplayMessages((prev) => [
-                ...prev.slice(0, -1),
-                { role: "assistant", content: accumulated },
-              ]);
+              setDisplayMessages((prev) => {
+                const next: DisplayMessage[] = [
+                  ...prev.slice(0, -1),
+                  { role: "assistant", content: accumulated },
+                ];
+                // Keep cache in sync so a re-select after streaming is instant.
+                if (activeIdRef.current) {
+                  msgCacheRef.current.set(activeIdRef.current, next);
+                }
+                return next;
+              });
             }
           } catch {
             // malformed chunk — skip
