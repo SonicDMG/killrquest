@@ -11,17 +11,21 @@ export const monstersCollection = db.collection<Monster>("monsters_v2");
 export const battlesCollection = db.collection<BattleRecord>("battles_v1");
 export const conversationsCollection = db.collection<ConversationDoc>("conversations_v1");
 
-// Create conversations_v1 if it doesn't exist yet (plain collection, no vectorizer)
+// Ensure conversations_v1 exists — checked once per process via a cached Promise.
+// Uses listCollections (read op) to avoid the DDL latency of createCollection when
+// the collection already exists.
 let conversationsReady: Promise<void> | null = null;
 export function ensureConversationsCollection(): Promise<void> {
   if (!conversationsReady) {
-    conversationsReady = db
-      .createCollection("conversations_v1")
-      .then(() => {})
-      .catch((e: unknown) => {
-        console.error("[astra] failed to create conversations_v1:", e);
-        conversationsReady = null; // allow retry next request
-      });
+    conversationsReady = (async () => {
+      const names: string[] = await db.listCollections({ nameOnly: true }) as unknown as string[];
+      if (!names.includes("conversations_v1")) {
+        await db.createCollection("conversations_v1");
+      }
+    })().catch((e: unknown) => {
+      console.error("[astra] failed to ensure conversations_v1:", e);
+      conversationsReady = null; // allow retry on next request
+    }) as Promise<void>;
   }
   return conversationsReady!;
 }

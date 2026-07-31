@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Feature Status — fix-conversation-lazy-load-latency</title>
+<style>
+  body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 20px; background: #0d1626; color: #e8eef7; }
+  .hero, .card, .commands { border: 1px solid #2b3f58; border-radius: 12px; padding: 16px; margin-bottom: 16px; background: #122033; }
+  .legend { font-size: 0.9rem; color: #9fb0c9; margin-bottom: 8px; }
+  .version-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .version-cell { border: 1px solid #2b3f58; border-radius: 10px; padding: 8px 10px; background: #0f1b2d; font-size: 0.85rem; }
+  .item-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .id-pill { display: inline-flex; align-items: center; border: 1px solid #3e6f93; border-radius: 999px 0 0 999px; background: #173a57; color: #c7ecff; font-size: 0.8rem; padding: 3px 10px; cursor: pointer; white-space: nowrap; }
+  .copy-btn { width: 26px; height: 26px; border: 1px solid #3e6f93; border-left: none; border-radius: 0 999px 999px 0; background: #12324c; color: #9fb0c9; cursor: pointer; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center; transition: color 0.15s, background 0.15s; }
+  .copy-btn:hover { background: #1e4a6e; color: #c7ecff; }
+  .copy-btn.copied { color: #6ee7b7; }
+  .item-label { font-size: 0.85rem; color: #e8eef7; flex: 1; min-width: 120px; }
+  .check { color: #6ee7b7; font-size: 0.9rem; flex-shrink: 0; }
+  .section-title { display: flex; justify-content: space-between; align-items: center; }
+  .decision-closed > .item-row { border-left: 3px solid #34d399; padding-left: 8px; }
+  .command-row { border: 1px solid #2b3f58; border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; font-family: monospace; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
+  .command-row.focus { border-color: #fbbf24; background: #3a2c12; }
+  details summary { cursor: pointer; color: #9fb0c9; font-size: 0.85rem; margin-bottom: 8px; }
+  .status-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; margin-left: 8px; }
+  .status-closed { background: #14432a; color: #6ee7b7; }
+  h3 { color: #9fb0c9; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin: 16px 0 6px; }
+  .empty { color: #4a5568; font-size: 0.8rem; padding: 4px 0; }
+  footer { text-align: center; font-size: 0.75rem; color: #4a5568; border-top: 1px solid #1e2d3d; padding-top: 16px; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <h1>Feature Status — fix-conversation-lazy-load-latency</h1>
+  <p style="color:#9fb0c9;margin-top:4px">Eliminate 1-2s lag on conversation list load and single conversation click</p>
+  <div class="legend">IDs validated via <code>bd show &lt;id&gt;</code> — confirmed IDs show <span style="color:#6ee7b7">&#10003;</span></div>
+  <div class="version-strip">
+    <div class="version-cell">Project: killrquest v0.1.0</div>
+    <div class="version-cell">Branch: <code>feat/fix-conversation-lazy-load-latency</code></div>
+    <div class="version-cell">Epic status: <span class="status-badge status-closed">closed</span></div>
+    <div class="version-cell">Children: 7</div>
+    <div class="version-cell">Validated: 8 / 8 <span style="color:#6ee7b7">&#10003;</span></div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="section-title">
+    <h2>fix-conversation-lazy-load-latency</h2>
+    <span class="status-badge status-closed">closed</span>
+  </div>
+
+  <div class="item-row">
+    <span class="id-pill" data-id="killrquest-b5p" data-cmd="cmd-killrquest-b5p">Epic: killrquest-b5p</span>
+    <button class="copy-btn" data-copy="killrquest-b5p" type="button" title="Copy ID">&#x2398;</button>
+    <span class="item-label" style="color:#9fb0c9">Users experience a 1-2s lag on page load and when clicking any conversation. Three root causes: createCollection DDL on cold starts, unconditional list re-fetch on tab switch, and redundant ensureConversationsCollection calls per function.</span>
+    <span class="check">&#10003;</span>
+  </div>
+
+  <h3>Requirements (2)</h3>
+  <div class="item-row">
+    <span class="id-pill" data-id="killrquest-b5p.2" data-cmd="cmd-killrquest-b5p-2">REQ: killrquest-b5p.2</span>
+    <button class="copy-btn" data-copy="killrquest-b5p.2" type="button" title="Copy ID">&#x2398;</button>
+    <span class="item-label">REQ-001 — conversation list loads without DDL latency</span>
+    <span class="check">&#10003;</span>
+  </div>
+  <div class="item-row">
+    <span class="id-pill" data-id="killrquest-b5p.1" data-cmd="cmd-killrquest-b5p-1">REQ: killrquest-b5p.1</span>
+    <button class="copy-btn" data-copy="killrquest-b5p.1" type="button" title="Copy ID">&#x2398;</button>
+    <span class="item-label">REQ-002 — clicking a conversation loads only that conversation</span>
+    <span class="check">&#10003;</span>
+  </div>
+
+  <h3>Resolved decisions (2)</h3>
+  <div class="decision-closed"><div class="item-row">
+    <span class="id-pill" data-id="killrquest-b5p.4" data-cmd="cmd-killrquest-b5p-4">Design: killrquest-b5p.4</span>
+    <button class="copy-btn" data-copy="killrquest-b5p.4" type="button" title="Copy ID">&#x2398;</button>
+    <span class="item-label">DESIGN: use listCollections check instead of createCollection guard</span>
+    <span class="check">&#10003;</span>
+  </div></div>
+  <div class="decision-closed"><div class="item-row">
+    <span class="id-pill" data-id="killrquest-b5p.3" data-cmd="cmd-killrquest-b5p-3">Design: killrquest-b5p.3</span>
+    <button class="copy-btn" data-copy="killrquest-b5p.3" type="button" title="Copy ID">&#x2398;</button>
+    <span class="item-label">DESIGN: remove unconditional list re-fetch on chat tab switch</span>
+    <span class="check">&#10003;</span>
+  </div></div>
+
+  <h3>Open tasks (0)</h3>
+  <p class="empty">None — all tasks complete.</p>
+
+  <details open>
+    <summary>Completed tasks (3)</summary>
+    <div class="item-row">
+      <span class="id-pill" data-id="killrquest-b5p.5" data-cmd="cmd-killrquest-b5p-5">Task: killrquest-b5p.5</span>
+      <button class="copy-btn" data-copy="killrquest-b5p.5" type="button" title="Copy ID">&#x2398;</button>
+      <span class="item-label">TASK-01: [lib] replace <code>createCollection</code> guard with <code>listCollections</code> existence check — <code>src/lib/astra.ts</code></span>
+      <span class="check">&#10003;</span>
+    </div>
+    <div class="item-row">
+      <span class="id-pill" data-id="killrquest-b5p.6" data-cmd="cmd-killrquest-b5p-6">Task: killrquest-b5p.6</span>
+      <button class="copy-btn" data-copy="killrquest-b5p.6" type="button" title="Copy ID">&#x2398;</button>
+      <span class="item-label">TASK-02: [lib] hoist <code>ensureConversationsCollection</code> to module init — <code>src/lib/conversations.ts</code></span>
+      <span class="check">&#10003;</span>
+    </div>
+    <div class="item-row">
+      <span class="id-pill" data-id="killrquest-b5p.7" data-cmd="cmd-killrquest-b5p-7">Task: killrquest-b5p.7</span>
+      <button class="copy-btn" data-copy="killrquest-b5p.7" type="button" title="Copy ID">&#x2398;</button>
+      <span class="item-label">TASK-03: [UI] remove unconditional conversation list re-fetch on chat tab switch — <code>src/components/CombatArena.tsx</code></span>
+      <span class="check">&#10003;</span>
+    </div>
+  </details>
+</section>
+
+<section class="commands">
+  <h2>Beads command snippets</h2>
+  <div class="command-row" id="cmd-killrquest-b5p">
+    <span>bd show killrquest-b5p</span>
+    <button class="copy-btn" data-copy="bd show killrquest-b5p" type="button" title="Copy command">&#x2398;</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-b5p-1">
+    <span>bd show killrquest-b5p.1</span>
+    <button class="copy-btn" data-copy="bd show killrquest-b5p.1" type="button" title="Copy command">&#x2398;</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-b5p-2">
+    <span>bd show killrquest-b5p.2</span>
+    <button class="copy-btn" data-copy="bd show killrquest-b5p.2" type="button" title="Copy command">&#x2398;</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-b5p-3">
+    <span>bd show killrquest-b5p.3</span>
+    <button class="copy-btn" data-copy="bd show killrquest-b5p.3" type="button" title="Copy command">&#x2398;</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-b5p-4">
+    <span>bd show killrquest-b5p.4</span>
+    <button class="copy-btn" data-copy="bd show killrquest-b5p.4" type="button" title="Copy command">&#x2398;</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-b5p-5">
+    <span>bd show killrquest-b5p.5</span>
+    <button class="copy-btn" data-copy="bd show killrquest-b5p.5" type="button" title="Copy command">&#x2398;</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-b5p-6">
+    <span>bd show killrquest-b5p.6</span>
+    <button class="copy-btn" data-copy="bd show killrquest-b5p.6" type="button" title="Copy command">&#x2398;</button>
+  </div>
+  <div class="command-row" id="cmd-killrquest-b5p-7">
+    <span>bd show killrquest-b5p.7</span>
+    <button class="copy-btn" data-copy="bd show killrquest-b5p.7" type="button" title="Copy command">&#x2398;</button>
+  </div>
+</section>
+
+<script>
+(function() {
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.copy-btn');
+    if (!btn) return;
+    var text = btn.getAttribute('data-copy');
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = '\u2713'; btn.classList.add('copied');
+      setTimeout(function() { btn.textContent = '\u2398'; btn.classList.remove('copied'); }, 1200);
+    }).catch(function() {
+      var ta = document.createElement('textarea'); ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      btn.textContent = '\u2713'; btn.classList.add('copied');
+      setTimeout(function() { btn.textContent = '\u2398'; btn.classList.remove('copied'); }, 1200);
+    });
+  });
+  document.addEventListener('click', function(e) {
+    var pill = e.target.closest('.id-pill');
+    if (!pill) return;
+    var cmdId = pill.getAttribute('data-cmd');
+    if (!cmdId) return;
+    var el = document.getElementById(cmdId);
+    if (!el) return;
+    document.querySelectorAll('.command-row.focus').forEach(function(r) { r.classList.remove('focus'); });
+    el.classList.add('focus');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+})();
+</script>
+
+<footer>Made with IBM Bob &middot; Generated from Beads &middot; killrquest</footer>
+</body>
+</html>
